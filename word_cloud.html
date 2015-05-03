@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<meta charset="UTF-8">
+	</head>
+	<body>
+		<svg id="graph" width="900px" height="300px"></svg>
+		<br/>
+		<textarea rows="15" cols="80">
+		The transformation step is most important, as this is where the mapping happens. D3 provides a structure for applying these transformations, but, as we’ll see, you define the mapping rules. Should larger values make taller bars or brighter circles? Will clusters be sorted on the x-axis by age or category? What color palette is used to fill in countries on your world map? All of the visual design decisions are up to you. You provide the concept, you craft the rules, and D3 executes it—without telling you what to do. (Yes, it’s like the opposite of Excel’s pushy “Chart Wizard.”)
+		</textarea>
+		<button onclick="transition()">Update</button>
+	</body>
+</html>
+<script type = "text/javascript"> 
+var map = [];
+var w = 900;
+var h = 300;
+function transition(){
+	var svg = document.getElementById("graph");
+	while(svg.getElementsByTagName("g")[0]){
+		svg.removeChild(svg.getElementsByTagName("g")[0]);
+	}
+	var str = document.getElementsByTagName("textarea")[0].value;
+	str = str.replace(/[\ |\~|\`|\!|\@|\#|\$|\%|\^|\&|\*|\(|\)|\-|\_|\+|\=|\||\\|\[|\]|\{|\}|\;|\:|\"|\'|\,|\“|\,|\”|‘\<|\.|\>|\/|\?]/g," "); 
+	var words = str.split(" ");
+	map = [];
+	for(var i = 0; i < words.length; i++){
+		if(trim(words[i]) != ""){
+			var id = hasProperty(map, trim(words[i]));
+			if(id >= 0){
+				map[id].count += 1;
+			}
+			else{
+				map.push({name:trim(words[i]), count:1});
+			}
+		}
+	}
+	map.sort(function(a,b){ return b.count - a.count; });
+	var sum = getSum(map);
+	var g = document.createElementNS("http://www.w3.org/2000/svg","g");
+	for(var i = 0; i < map.length; i++){
+		var text = document.createElementNS("http://www.w3.org/2000/svg","text");
+		if(i === 0){
+			text.setAttribute("x", w/2);
+			text.setAttribute("y", h/2);
+		}
+		else{
+			text.setAttribute("x", w/2);
+			text.setAttribute("y", h/2+10);
+		}
+		text.setAttribute("text-anchor", "middle");
+		text.setAttribute("font-size", Math.floor((map[i].count/sum)*90) + 10);
+		text.setAttribute("fill", "black");
+		text.setAttribute("font-family", "Impact");
+		text.textContent = map[i].name;
+		g.appendChild(text);
+	}
+	svg.appendChild(g);
+	transform();
+}
+function hasProperty(arr, name){
+	for(var i = 0; i < arr.length; i++){
+		if(arr[i].name === name){
+			return i;
+		}
+	}
+	return -1;
+}
+function trim(str) {
+  return str.replace(/(^\s+)|(\s+$)/g, "");
+}
+function getSum(arr){
+	var sum = 0;
+	for(var i = 0; i < arr.length; i++){
+		sum += arr[i].count;
+	}
+	return sum;
+}
+function transform(){
+	var svg = document.getElementById("graph");
+	var g = svg.getElementsByTagName("g")[0];
+	var nodes = g.getElementsByTagName("text");
+	var rectlist = [];
+	var newpoint = {x:0, y:0};
+	for(var i = 0; i <= w; i++){
+		rectlist.push([]);
+		for(var j = 0; j <= h; j++){
+			rectlist[i].push(1);
+		}
+	}
+	console.log(rectlist);
+	for(var i = 0; i < nodes.length; i++){
+		if(i == 0){
+			setRectList(rectlist, nodes[i].getBoundingClientRect());
+		}
+		else{
+			var rect = nodes[i].getBoundingClientRect();
+			var width = rect.right - rect.left;
+			var height = rect.bottom - rect.top;
+			newpoint.x = Math.random()*(w - width) + width/2;
+			newpoint.y = Math.random()*(h-height) + height/2;
+			var j = 0;
+			while(isOverlap(rectlist, nodes[i].getBoundingClientRect())){
+				//newpoint = spiralMove({x:w/2, y:h/2}, {x:nodes[i].getAttribute("x"), y:nodes[i].getAttribute("y")});
+				spiralMove(newpoint);
+				nodes[i].setAttribute("x", newpoint.x);
+				nodes[i].setAttribute("y", newpoint.y);
+				j++;
+			}
+			setRectList(rectlist, nodes[i].getBoundingClientRect());
+		}
+	}
+}
+function spiralMove(point2){
+	var x = Math.random() - 0.5;
+	var y = Math.random() - 0.5;
+	point2.x += x*50;
+	point2.y += y*30;
+	if(point2.x < 0){
+		point2.x = 50;
+	}
+	if(point2.x > w){
+		point2.x = w - 50;
+	}
+	if(point2.y < 0){
+		point2.y = 30;
+	}
+	if(point2.y > h){
+		point2.y = h - 30;
+	}
+}
+function setRectList(rectlist, rect){
+	for(var i = Math.floor(rect.left)+1; i <= Math.floor(rect.right) && i < rectlist.length; i++){
+		for(var j = Math.floor(rect.top)+1; j <= Math.floor(rect.bottom) && j < rectlist[i].length; j++){
+				rectlist[i][j] = 0;
+		}	
+	}
+}
+function isOverlap(rectlist, rect){
+	for(var i = Math.floor(rect.left)+1; i <= Math.floor(rect.right) && i < rectlist.length; i++){
+		for(var j = Math.floor(rect.top)+1; j <= Math.floor(rect.bottom) && j < rectlist[i].length; j++){
+			if(rectlist[i][j] == 0){
+				return true;
+			}
+		}	
+	}
+	return false;
+}
+function isOutOfRange(rect){
+	if(rect.left < 0 || rect.right > w || rect.top < 0 || rect.bottom > h){
+		return true;
+	}
+	return false;
+}
+</script>
