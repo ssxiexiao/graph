@@ -98,15 +98,11 @@ function transform(){
 			var rect = nodes[i].getBoundingClientRect();
 			var width = rect.right - rect.left;
 			var height = rect.bottom - rect.top;
-			newpoint.x = Math.random()*(w - width) + width/2;
-			newpoint.y = Math.random()*(h-height) + height/2;
-			var j = 0;
 			while(isOverlap(rectlist, nodes[i].getBoundingClientRect())){
-				//newpoint = spiralMove({x:w/2, y:h/2}, {x:nodes[i].getAttribute("x"), y:nodes[i].getAttribute("y")});
-				spiralMove(newpoint);
+				newpoint.x = Math.random()*(w - width) + width/2;
+				newpoint.y = Math.random()*(h - height) + height/2;
 				nodes[i].setAttribute("x", newpoint.x);
 				nodes[i].setAttribute("y", newpoint.y);
-				j++;
 			}
 			setRectList(rectlist, nodes[i].getBoundingClientRect());
 		}
