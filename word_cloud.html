@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	</head>
 	<body>
-		<svg id="graph" width="900px" height="300px"></svg>
+		<svg id="graph"></svg>
 		<br/>
 		<textarea rows="15" cols="80">
 		The transformation step is most important, as this is where the mapping happens. D3 provides a structure for applying these transformations, but, as we’ll see, you define the mapping rules. Should larger values make taller bars or brighter circles? Will clusters be sorted on the x-axis by age or category? What color palette is used to fill in countries on your world map? All of the visual design decisions are up to you. You provide the concept, you craft the rules, and D3 executes it—without telling you what to do. (Yes, it’s like the opposite of Excel’s pushy “Chart Wizard.”)
@@ -14,15 +14,20 @@
 </html>
 <script type = "text/javascript"> 
 var map = [];
-var w = 900;
-var h = 300;
+var w = 1200;
+var h = 600;
+var minfont_size = 15;
+var maxfont_size = 100;
+var svg = document.getElementById("graph");
+svg.setAttribute("width", w);
+svg.setAttribute("height", h);
 function transition(){
 	var svg = document.getElementById("graph");
 	while(svg.getElementsByTagName("g")[0]){
 		svg.removeChild(svg.getElementsByTagName("g")[0]);
 	}
 	var str = document.getElementsByTagName("textarea")[0].value;
-	str = str.replace(/[\ |\~|\`|\!|\@|\#|\$|\%|\^|\&|\*|\(|\)|\-|\_|\+|\=|\||\\|\[|\]|\{|\}|\;|\:|\"|\'|\,|\“|\,|\”|‘\<|\.|\>|\/|\?]/g," "); 
+	str = str.replace(/[\ |\~|\`|\!|\@|\#|\$|\%|\^|\&|\*|\(|\)|\-|\_|\+|\=|\||\\|\[|\]|\{|\}|\;|\:|\"|\'|\,|\“|\,|\”|‘\<|\.|\>|\/|\—|\?]/g," "); 
 	var words = str.split(" ");
 	map = [];
 	for(var i = 0; i < words.length; i++){
@@ -37,7 +42,8 @@ function transition(){
 		}
 	}
 	map.sort(function(a,b){ return b.count - a.count; });
-	var sum = getSum(map);
+	var mincount = map[map.length-1].count;
+	var font_size;
 	var g = document.createElementNS("http://www.w3.org/2000/svg","g");
 	for(var i = 0; i < map.length; i++){
 		var text = document.createElementNS("http://www.w3.org/2000/svg","text");
@@ -50,7 +56,9 @@ function transition(){
 			text.setAttribute("y", h/2+10);
 		}
 		text.setAttribute("text-anchor", "middle");
-		text.setAttribute("font-size", Math.floor((map[i].count/sum)*90) + 10);
+		font_size = (map[i].count / mincount) * minfont_size;
+		font_size = Math.floor(Math.min(font_size, maxfont_size));
+		text.setAttribute("font-size", font_size);
 		text.setAttribute("fill", "black");
 		text.setAttribute("font-family", "Impact");
 		text.textContent = map[i].name;
@@ -98,11 +106,13 @@ function transform(){
 			var rect = nodes[i].getBoundingClientRect();
 			var width = rect.right - rect.left;
 			var height = rect.bottom - rect.top;
-			while(isOverlap(rectlist, nodes[i].getBoundingClientRect())){
+			var j = 0;
+			while(isOverlap(rectlist, nodes[i].getBoundingClientRect()) && j < 50){
 				newpoint.x = Math.random()*(w - width) + width/2;
 				newpoint.y = Math.random()*(h - height) + height/2;
 				nodes[i].setAttribute("x", newpoint.x);
 				nodes[i].setAttribute("y", newpoint.y);
+				j++;
 			}
 			setRectList(rectlist, nodes[i].getBoundingClientRect());
 		}
