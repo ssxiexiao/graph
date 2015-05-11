@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<meta charset="UTF-8">
+	</head>
+	<body>
+		<svg></svg>
+		<br/>
+		<textarea rows="15" cols="80">
+		The transformation step is most important, as this is where the mapping happens. D3 provides a structure for applying these transformations, but, as we’ll see, you define the mapping rules. Should larger values make taller bars or brighter circles? Will clusters be sorted on the x-axis by age or category? What color palette is used to fill in countries on your world map? All of the visual design decisions are up to you. You provide the concept, you craft the rules, and D3 executes it—without telling you what to do. (Yes, it’s like the opposite of Excel’s pushy “Chart Wizard.”)
+		</textarea>
+		<button onclick="transition()">Update</button>
+	</body>
+</html>
+
+<script type="text/javascript">
+var w = 1200;
+var h = 800;
+var GRAPH = [];
+for(var i = 0; i < w; i++){
+	GRAPH.push([]);
+	for(var j = 0; j < h; j++){
+		GRAPH[GRAPH.length - 1].push(0);
+	}
+}
+window.onload = function(){
+	var svg = document.getElementsByTagName("svg")[0];
+	svg.setAttribute("width", w);
+	svg.setAttribute("height", h);
+}
+function text2Words(str){
+	var words =  str.replace(/[\s|\~|\`|\!|\@|\#|\$|\%|\^|\&|\*|\(|\)|\+|\=|\||\\|\[|\]|\{|\}|\;|\:|\"|\'|\,|\“|\,|\”|‘\<|\.|\>|\/|\—|\?|\t|\n]+/g, " ").split(" ");
+	if(words[0] == "")
+		words.shift();
+	if(words[words.length - 1] == "")
+		words.pop();
+	var res = {};
+	for(var i = 0; i < words.length; i++){
+		if(res[words[i]] == undefined)
+			res[words[i]] = 1;
+		else
+			res[words[i]]++;
+	}
+	return res;
+}
+function removeChild(dom){
+	while(dom.getElementsByTagName("*")[0]){
+		dom.removeChild(dom.getElementsByTagName("*")[0]);
+	}
+}
+function addWords(container, words){
+	var sum = 0;
+	for(var i in words){
+		sum += words[i];
+	}
+	var wordunit = Math.max(Math.floor(w*h / sum), 1);
+	for()
+}
+function transition(){
+	var svg = document.getElementsByTagName("svg")[0];
+	removeChild(svg);
+	var text = document.getElementsByTagName("textarea")[0].value;
+	var g = document.createElementNS("http://www.w3.org/2000/svg","g");
+	svg.appendChild(g);
+	addWords(g, text2Words(text));
+}
+
+</script>
