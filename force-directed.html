@@ -144,10 +144,10 @@ document.onmouseup = up;
 document.onmousemove = move;
 var map = {};
 var period = 10;
-var w = 800;
-var h = 500;
+var w = 1200;
+var h = 800;
 var padding = 20;
-var nodenum = 11;
+var nodenum = 30;
 var node = [];
 var edge = [		
 					{ source: 0, target: 1 },
@@ -163,7 +163,30 @@ var edge = [
 					{ source: 6, target: 7 },
 					{ source: 7, target: 8 },
 					{ source: 8, target: 9 },
-					{ source: 8, target: 10 }
+					{ source: 8, target: 10},
+					{ source: 10, target: 11},
+					{ source: 10, target: 12},
+					{ source: 5, target: 13},
+					{ source: 1, target: 13},
+					{ source: 3, target: 14},
+					{ source: 8, target: 15},
+					{ source: 15, target: 16},
+					{ source: 2, target: 17},
+					{ source: 16, target: 17},
+					{ source: 6, target: 18},
+					{ source: 11, target: 19},
+					{ source: 3, target: 19},
+					{ source: 15, target: 20},
+					{ source: 14, target: 20},
+					{ source: 17, target: 21},
+					{ source: 18, target: 22},
+					{ source: 8, target: 23},
+					{ source: 2, target: 24},
+					{ source: 9, target: 25},
+					{ source: 13, target: 26},
+					{ source: 19, target: 27},
+					{ source: 23, target: 28},
+					{ source: 25, target: 29}
 			];
 var len = 30;
 for(var i = 0; i < nodenum; i++){

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Streamgraph</title>
+<style>
+    button {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+    }
+</style>
+<html>
+<body>
+<svg id="graph" width="1000"  height="1000">
+    <path d="M1,1L200,200" stroke="black" stroke-width="2px"></path>
+</svg>
+<button onclick="transition()">Update</button>
+</body>
+</html>
+<script type = "text/javascript">
+    var count = 1;
+    var svg = document.getElementById("graph");
+    function transition(){
+        for(var i = 1; i < 200; i++){
+            setTimeout(display, 100*i);
+        }
+    }
+    function display(){
+        svg.removeChild(svg.getElementsByTagName("*")[0]);
+        var path = document.createElementNS("http://www.w3.org/2000/svg","path");
+        var str = "M" + (count+1) + "," + (count+1) + "L" + (count+200) + "," + (count+200);
+        console.log(count);
+        path.setAttribute("d", str);
+        path.setAttribute("stroke", "black");
+        path.setAttribute("stroke-width", "2px");
+        svg.appendChild(path);
+        count++;
+    }
+</script>
