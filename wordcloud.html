@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<input>
+<html>
 	<head>
 	<meta charset="UTF-8">
 		<script type="text/javascript" src="d3.js"></script>
 	</head>
-	<input>
+	<body>
 		<canvas></canvas>
 		<br/>
 		<textarea rows="15" cols="80">
@@ -89,13 +89,13 @@ function draw(data){
 			cxt.fillText(data[0].text, fix.x, fix.y);
 			continue;
 		}
-		if(i % 20 == 0)
-			id = 0;
+		id = 0;
 		while(1){
 			if(!isOverLap(fontSize, cxt.measureText(data[i].text).width, position[id], data[i].text)){
 				break;
 			}
-			id+=Math.floor(1+Math.random()*20);
+			//id+=Math.floor(1+Math.random()*5);
+			id+=1;
 		}
 		cxt.fillText(data[i].text, position[id].x, position[id].y);
 		console.log(i+"----"+id);
