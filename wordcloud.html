@@ -70,6 +70,7 @@ function draw(data){
 	var fix = {x:w/2,y:h/2};
 	var position = {x:w/2, y:h/2 - 5};
 	var id = 0;
+	var direction = 0;
 	if(square.checked === true) {
 		var getPosition = getNextPosition2;
 	}
@@ -89,7 +90,7 @@ function draw(data){
 			if(!isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text)){
 				break;
 			}
-			position = getPosition(fix, position, fontSize, cxt1.measureText(data[i].text).width/data[i].text.length);
+			position = getPosition(fix, position, 5, 5);
 			id++;
 		}
 		cxt1.fillText(data[i].text, position.x, position.y);
@@ -104,10 +105,10 @@ function isOverLap(height, width, position, text){
 	var newData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
 	cxt2.clearRect(0,0,_w,_h);
 	var bg = 0;
-	for(var i = 0; i < oldData.data.length; i+=4){
-		var oldPix = (oldData.data[i]<<9) + (oldData.data[i+1]<<6) + (oldData.data[i+2]<<3) + oldData.data[i+3];
-		var newPix = (newData.data[i]<<9) + (newData.data[i+1]<<6) + (newData.data[i+2]<<3) + newData.data[i+3];
-		if(oldPix != bg && newPix != bg){
+	var oldPix = oldData.data;
+	var newPix = newData.data;
+	for(var i = 0; i < oldPix.length; i+=4){
+		if(oldPix[i+3] != bg && newPix[i+3] != bg){
 			return true;
 		}
 	}
