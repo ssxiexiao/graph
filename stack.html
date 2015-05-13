@@ -22,13 +22,14 @@
     for(var i = 0; i < n; i++){
         arr.push(i);
     }
-    var w = 1200, h = 800;
+    var w = 1200, h = 600;
     var wunit = w / m;
-    var dataset = stack(arr.map(function(){ return bumpLayer(m); }));
+    var rawdata = arr.map(function(){ return bumpLayer(m); });
+    var dataset = stack(rawdata);
     var minvalue = 0 - getMin(dataset[0]);
     var maxvalue = getMax(dataset[dataset.length-1]);
-    minvalue = 15;
-    var hunit = h / 50;
+    var hunit = h / (minvalue+maxvalue);
+    scale(dataset);
     var count = 0;
     console.log(minvalue);
     console.log(maxvalue);
@@ -38,7 +39,7 @@
     svg.setAttribute("height", h);
     for(var i = 0; i < n; i++){
         var path = document.createElementNS("http://www.w3.org/2000/svg","path");
-        var str = genPath(dataset[i],dataset[i+1], wunit, hunit, h);
+        var str = genPath(dataset[i],dataset[i+1]);
         var r = Math.floor((i+1)/n*100) + 100;
         var g = Math.floor((i+1)/n*100) + 100;
         var b = Math.floor((i+1)/n*100) + 150;
@@ -96,28 +97,36 @@
         }
         return arr;
     }
+    function scale(data){
+        for(var i = 0; i < data.length; i++){
+            for(var j = 0; j < data[i].length; j++){
+                data[i][j].x *= wunit;
+                data[i][j].y = (data[i][j].y + minvalue) * hunit
+            }
+        }
+    }
     function transition() {
         var newdataset = stack(arr.map(function(){ return bumpLayer(m); }));
-        //minvalue = 0 - getMin(newdataset[0]);
-        //maxvalue = getMax(newdataset[newdataset.length-1]);
-        //hunit = h / (getMax(newdataset[newdataset.length-1]) - getMin(newdataset[0]));
+        minvalue = 0 - getMin(newdataset[0]);
+        maxvalue = getMax(newdataset[newdataset.length-1]);
+        hunit = h / (minvalue+maxvalue);
+        scale(newdataset);
         //var transition_time = 1000;
         var part = 200;
         for(var i = 0; i <= part; i++){
-            setTimeout(function(){display(getMiddlePoint(dataset, newdataset, part)); if(count > part){ dataset = newdataset;}}, i*10);
+            setTimeout(function(){display(getMiddlePoint(dataset, newdataset, part)); if(count > part){ dataset = newdataset;}}, i*5);
         }
     }
-    function genPath(g0, g1, wunit, hunit){
-        var str = "M" + g1[0].x * wunit + "," + ((g1[0].y + minvalue) * hunit);
+    function genPath(g0, g1){
+        var str = "M" + g1[0].x + "," + g1[0].y;
         for(var i = 1; i < g1.length; i++){
-            str += "L" + g1[i].x * wunit + "," + ((g1[i].y + minvalue) * hunit);
+            str += "L" + g1[i].x + "," + g1[i].y;
         }
         for(var i = g0.length - 1; i >= 0; i--){
-            str += "L" + g0[i].x * wunit + "," + ((g0[i].y + minvalue) * hunit);
+            str += "L" + g0[i].x + "," + g0[i].y;
         }
         return str;
     }
-
     // Inspired by Lee Byron's test data generator.
     function bumpLayer(n) {
 
@@ -155,17 +164,10 @@
         }
         return min;
     }
-    function getSum(dataset, start, end, id){
-        var sum = 0;
-        for(var i = start; i < end; i++){
-            sum += dataset[i][id].y;
-        }
-        return sum;
-    }
     function display(dataset){
         for(var i = 0; i < n; i++){
             var path = svg.getElementsByTagName("path")[i];
-            var str = genPath(dataset[i],dataset[i+1], wunit, hunit);
+            var str = genPath(dataset[i],dataset[i+1]);
             var r = Math.floor((i+1)/n*100) + 100;
             var g = Math.floor((i+1)/n*100) + 100;
             var b = Math.floor((i+1)/n*100) + 150;

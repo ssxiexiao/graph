@@ -2,6 +2,7 @@
 <html>
 	<head>
 	<meta charset="UTF-8">
+		<script type="text/javascript" src="d3.js"></script>
 	</head>
 	<body>
 		<canvas></canvas>
@@ -10,6 +11,7 @@
 		The transformation step is most important, as this is where the mapping happens. D3 provides a structure for applying these transformations, but, as we’ll see, you define the mapping rules. Should larger values make taller bars or brighter circles? Will clusters be sorted on the x-axis by age or category? What color palette is used to fill in countries on your world map? All of the visual design decisions are up to you. You provide the concept, you craft the rules, and D3 executes it—without telling you what to do. (Yes, it’s like the opposite of Excel’s pushy “Chart Wizard.”)
 		</textarea>
 		<button onclick="transition()">Update</button>
+		<button onclick="sample()">Sample</button>
 		<br/>
 		<canvas></canvas>
 	</body>
@@ -27,7 +29,6 @@ window.onload = function(){
 	var canvas2 = document.getElementsByTagName("canvas")[1];
 	canvas2.setAttribute("width", _w);
 	canvas2.setAttribute("height", _h);
-	draw(rawdata);
 }
 function hasProperty(arr, name){
 	for(var i = 0; i < arr.length; i++){
@@ -60,62 +61,56 @@ function draw(data){
 	cxt.clearRect(0,0,w,h);
 	cxt.textAlign = "center";
 	cxt.textBaseline = "middle";
+	cxt.fillStyle = "black";
 	var fix = {x:w/2,y:h/2};
-	var position = {x:w/2, y:h/2 - 10};
+	var position = [];
+	var startPosition = {x:w/2, y:h/2 - 5};
+	var id = 0;
+	position.push(startPosition);
+	for(var i = 0; i < 10000; i++){
+		console.log(i);
+		position.push(getNextPosition2(fix, position[position.length-1], 5));
+	}
 	for(var i = 0; i < data.length; i++) {
 		var fontSize = data[i].value*5;
 		cxt.font = fontSize + "px Arial";
+		//console.log(i);
 		if(i === 0){
 			cxt.fillText(data[0].text, fix.x, fix.y);
 			continue;
 		}
-		if(i % 300 == 0)
-			position = {x:w/2, y:h/2 - 5};
-		console.log(i);
+		if(i % 10 == 0)
+			id = 0;
 		while(1){
-			if(!isOverLap(fontSize, cxt.measureText(data[i].text).width, position,data[i].text)){
+			if(!isOverLap(fontSize, cxt.measureText(data[i].text).width, position[id], data[i].text)){
 				break;
 			}
-			position = getNextPosition2(fix, position, 5);
+			id+=Math.floor(1+Math.random()*10);
 		}
-		cxt.fillText(data[i].text, position.x, position.y);
+		cxt.fillText(data[i].text, position[id].x, position[id].y);
+		console.log(i+"----"+id);
 	}
 }
 function isOverLap(height, width, position, text){
 	var canvas1 = document.getElementsByTagName("canvas")[0];
 	var canvas2 = document.getElementsByTagName("canvas")[1];
-	var padding = 10;
+	var padding = 0;
 	var cxt1 = canvas1.getContext("2d");
 	var cxt2 = canvas2.getContext("2d");
 	var oldData = cxt1.getImageData(position.x - width/2 - padding, position.y - height/2 - padding, width + 2*padding, height + 2*padding);
-	cxt2.font = height + "px Georgia";
+	cxt2.font = height + "px Arial";
 	cxt2.textAlign = "center";
 	cxt2.textBaseline = "middle";
+	cxt2.fillStyle = "black";
 	cxt2.fillText(text, width/2 + padding, height/2 + padding);
 	var newData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
 	cxt2.clearRect(0,0,_w,_h);
-	cxt2.putImageData(oldData, 0, 0);
-	cxt2.fillText(text, width/2 + padding, height/2 + padding);
-	var totalData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
-	for(var i = 0; i < totalData.data.length; i++){
-		if((i+1)%4 != 0 && totalData.data[i] != (newData.data[i] + oldData.data[i])) {
-			cxt2.clearRect(0,0,_w,_h);
-			return true;
-		}
-		if((i+1)%4 == 0 && totalData.data[i] != newData.data[i] && totalData.data[i] != newData[i]) {
-			cxt2.clearRect(0,0,_w,_h);
+	for(var i = 0; i < oldData.data.length; i+=4){
+		if(oldData.data[i+3] != 0 && newData.data[i+3] != 0){
 			return true;
 		}
 	}
-	cxt2.clearRect(0,0,_w,_h);
 	return false;
-}
-function transition(){
-	var canvas = document.getElementsByTagName("canvas")[0];
-	var text = document.getElementsByTagName("textarea")[0].value;
-	var data = text2Words(text);
-	console.log(data);
-	draw(data);
 }
 function getNextPosition(fix, position, addangle){
 	var len = 1;
@@ -155,255 +150,17 @@ function getNextPosition2(fix, position, len){
 	}
 	return {x:fix.x + dx, y:fix.y - dy};
 }
-var rawdata = [{"text":"","value":54},
-	{"text":"Word","value":17},
-	{"text":"words","value":9},
-	{"text":"sprite","value":9},
-	{"text":"none","value":9},
-	{"text":"layout","value":7},
-	{"text":"JavaScript","value":7},
-	{"text":"cloud","value":6},
-	{"text":"color","value":5},
-	{"text":"placed","value":5},
-	{"text":"Use","value":5},
-	{"text":"HTML","value":5},
-	{"text":"Wordle","value":5},
-	{"text":"bounding","value":5},
-	{"text":"possible","value":4},
-	{"text":"bbtree","value":4},
-	{"text":"operation","value":4},
-	{"text":"Jonathan","value":4},
-	{"text":"Feinberg","value":4},
-	{"text":"Tag","value":4},
-	{"text":"hierarchical","value":4},
-	{"text":"flex","value":4},
-	{"text":"collision","value":4},
-	{"text":"area","value":4},
-	{"text":"return","value":3},
-	{"text":"starting","value":3},
-	{"text":"implementation","value":3},
-	{"text":"Generator","value":3},
-	{"text":"think","value":3},
-	{"text":"Algorithm","value":3},
-	{"text":"time","value":3},
-	{"text":"draw","value":3},
-	{"text":"retrieve","value":3},
-	{"text":"data","value":3},
-	{"text":"masks","value":3},
-	{"text":"font","value":3},
-	{"text":"step","value":3},
-	{"text":"fonts","value":3},
-	{"text":"candidate","value":3},
-	{"text":"box","value":3},
-	{"text":"previouslyplaced","value":2},
-	{"text":"fired","value":2},
-	{"text":"placement","value":2},
-	{"text":"0","value":2},
-	{"text":"rect","value":2},
-	{"text":"stroke","value":2},
-	{"text":"simple","value":2},
-	{"text":"32","value":2},
-	{"text":"move","value":2},
-	{"text":"perform","value":2},
-	{"text":"Works","value":2},
-	{"text":"makes","value":2},
-	{"text":"css","value":2},
-	{"text":"number","value":2},
-	{"text":"without","value":2},
-	{"text":"Boxes","value":2},
-	{"text":"glyphs","value":2},
-	{"text":"always","value":2},
-	{"text":"via","value":2},
-	{"text":"SVG","value":2},
-	{"text":"instead","value":2},
-	{"text":"pixel","value":2},
-	{"text":"attribute","value":2},
-	{"text":"separately","value":2},
-	{"text":"expensive","value":2},
-	{"text":"pixels","value":2},
-	{"text":"even","value":2},
-	{"text":"var","value":2},
-	{"text":"detection","value":2},
-	{"text":"using","value":2},
-	{"text":"fontSize","value":2},
-	{"text":"larger","value":2},
-	{"text":"whole","value":2},
-	{"text":"=","value":2},
-	{"text":"comparing","value":2},
-	{"text":"text","value":2},
-	{"text":"32bit","value":2},
-	{"text":"Times","value":2},
-	{"text":"code","value":2},
-	{"text":"large","value":2},
-	{"text":"Sizes","value":2},
-	{"text":"D3","value":2},
-	{"text":"version","value":2},
-	{"text":"single","value":2},
-	{"text":"test","value":2},
-	{"text":"slightly","value":2},
-	{"text":"tree","value":2},
-	{"text":"see","value":2},
-	{"text":"bit","value":2},
-	{"text":"Performance","value":2},
-	{"text":"implement","value":2},
-	{"text":"CSS3","value":2},
-	{"text":"clouds","value":2},
-	{"text":"Visualization","value":2},
-	{"text":"khtmluserselect","value":1},
-	{"text":"stuttering","value":1},
-	{"text":"recommended","value":1},
-	{"text":"mozuserselect","value":1},
-	{"text":"msuserselect","value":1},
-	{"text":"ouserselect","value":1},
-	{"text":"animations","value":1},
-	{"text":"prevents","value":1},
-	{"text":"browsers","value":1},
-	{"text":"event","value":1},
-	{"text":"loop","value":1},
-	{"text":"blocking","value":1},
-	{"text":"placing","value":1},
-	{"text":"configured","value":1},
-	{"text":"userselect","value":1},
-	{"text":"pre","value":1},
-	{"text":"30","value":1},
-	{"text":"d3scalelogrange10","value":1},
-	{"text":"size960","value":1},
-	{"text":"timeInterval10","value":1},
-	{"text":"textfunctiond","value":1},
-	{"text":"fontfamily","value":1},
-	{"text":"dkey","value":1},
-	{"text":"fontImpact","value":1},
-	{"text":"fontSizefunctiond","value":1},
-	{"text":"fontSize+dvalue","value":1},
-	{"text":"rotatefunctiond","value":1},
-	{"text":"~~Mathrandom","value":1},
-	{"text":"padding1","value":1},
-	{"text":"onword","value":1},
-	{"text":"progress","value":1},
-	{"text":"onend","value":1},
-	{"text":"Menlo","value":1},
-	{"text":"start","value":1},
-	{"text":"monospace","value":1},
-	{"text":"rotate","value":1},
-	{"text":"padding","value":1},
-	{"text":"options","value":1},
-	{"text":"take","value":1},
-	{"text":"either","value":1},
-	{"text":"constant","value":1},
-	{"text":"values","value":1},
-	{"text":"accessor","value":1},
-	{"text":"functions","value":1},
-	{"text":"called","value":1},
-	{"text":"datum","value":1},
-	{"text":"two","value":1},
-	{"text":"events","value":1},
-	{"text":"suggestions","value":1},
-	{"text":"successfully","value":1},
-	{"text":"end","value":1},
-	{"text":"stop","value":1},
-	{"text":"running","value":1},
-	{"text":"simply","value":1},
-	{"text":"call","value":1},
-	{"text":"layoutstop","value":1},
-	{"text":"synchronous","value":1},
-	{"text":"value","value":1},
-	{"text":"timeIntervalInfinity","value":1},
-	{"text":"Web","value":1},
-	{"text":"60","value":1},
-	{"text":"Yes","value":1},
-	{"text":"although","value":1},
-	{"text":"need","value":1},
-	{"text":"wait","value":1},
-	{"text":"loaded","value":1},
-	{"text":"string","value":1},
-	{"text":"regexp","value":1},
-	{"text":"Notes","value":1},
-	{"text":"incredibly","value":1},
-	{"text":"urlstylecss","value":1},
-	{"text":"important","value":1},
-	{"text":"Attempt","value":1},
-	{"text":"place","value":1},
-	{"text":"point","value":1},
-	{"text":"usually","value":1},
-	{"text":"near","value":1},
-	{"text":"middle","value":1},
-	{"text":"somewhere","value":1},
-	{"text":"central","value":1},
-	{"text":"horizontal","value":1},
-	{"text":"line","value":1},
-	{"text":"intersects","value":1},
-	{"text":"756bb1","value":1},
-	{"text":"100","value":1},
-	{"text":"one","value":1},
-	{"text":"along","value":1},
-	{"text":"increasing","value":1},
-	{"text":"spiral","value":1},
-	{"text":"Repeat","value":1},
-	{"text":"intersections","value":1},
-	{"text":"found","value":1},
-	{"text":"hard","value":1},
-	{"text":"part","value":1},
-	{"text":"making","value":1},
-	{"text":"600","value":1},
-	{"text":"efficiently","value":1},
-	{"text":"According","value":1},
-	{"text":"keyword","value":1},
-	{"text":"3182bd","value":1},
-	{"text":"comment","value":1},
-	{"text":"uses","value":1},
-	{"text":"combination","value":1},
-	{"text":"doctype","value":1},
-	{"text":"636363","value":1},
-	{"text":"31a354","value":1},
-	{"text":"1","value":1},
-	{"text":"achieve","value":1},
-	{"text":"reasonable","value":1},
-	{"text":"speeds","value":1},
-	{"text":"f00","value":1},
-	{"text":"isnt","value":1},
-	{"text":"way","value":1},
-	{"text":"class","value":1},
-	{"text":"precise","value":1},
-	{"text":"glyph","value":1},
-	{"text":"shapes","value":1},
-	{"text":"special","value":1},
-	{"text":"DOM","value":1},
-	{"text":"except","value":1},
-	{"text":"perhaps","value":1},
-	{"text":"e6550d","value":1},
-	{"text":"container","value":1},
-	{"text":"hidden","value":1},
-	{"text":"canvas","value":1},
-	{"text":"element","value":1},
-	{"text":"display","value":1},
-	{"text":"fill","value":1},
-	{"text":"Retrieving","value":1},
-	{"text":"flexdirection","value":1},
-	{"text":"row","value":1},
-	{"text":"many","value":1},
-	{"text":"breadcrumbs","value":1},
-	{"text":"batch","value":1},
-	{"text":"Sprites","value":1},
-	{"text":"content","value":1},
-	{"text":"initial","value":1},
-	{"text":"performed","value":1},
-	{"text":"ads","value":1},
-	{"text":"12em","value":1},
-	{"text":"Jason","value":1},
-	{"text":"Davies","value":1},
-	{"text":"doesnt","value":1},
-	{"text":"copy","value":1},
-	{"text":"appropriate","value":1},
-	{"text":"position","value":1},
-	{"text":"→","value":1},
-	{"text":"representing","value":1},
-	{"text":"3","value":1},
-	{"text":"available","value":1},
-	{"text":"advantage","value":1},
-	{"text":"involves","value":1},
-	{"text":"GitHub","value":1},
-	{"text":"d3cloud","value":1},
-	{"text":"relevant","value":1},
-	{"text":"rather","value":1}
-];
+function transition(){
+	var canvas = document.getElementsByTagName("canvas")[0];
+	var text = document.getElementsByTagName("textarea")[0].value;
+	var data = text2Words(text);
+	console.log(data);
+	draw(data);
+}
+function sample(){
+	d3.json("word.json", function(json) {
+		console.log(json);  //Log output to console
+		draw(json);
+	});
+}
 </script>
