@@ -23,13 +23,21 @@ var w = 1200;
 var h = 800;
 var _w = 500;
 var _h = 500;
+var canvas1 = document.getElementsByTagName("canvas")[0];
+var canvas2 = document.getElementsByTagName("canvas")[1];
+var cxt1 = canvas1.getContext("2d");
+var cxt2 = canvas2.getContext("2d");
 window.onload = function(){
-	var canvas1 = document.getElementsByTagName("canvas")[0];
 	canvas1.setAttribute("width", w);
 	canvas1.setAttribute("height", h);
-	var canvas2 = document.getElementsByTagName("canvas")[1];
 	canvas2.setAttribute("width", _w);
 	canvas2.setAttribute("height", _h);
+	cxt1.textAlign = "center";
+	cxt1.textBaseline = "middle";
+	cxt1.fillStyle = "black";
+	cxt2.textAlign = "center";
+	cxt2.textBaseline = "middle";
+	cxt2.fillStyle = "black";
 }
 function hasProperty(arr, name){
 	for(var i = 0; i < arr.length; i++){
@@ -57,61 +65,41 @@ function text2Words(str){
 	return res.sort(function(a,b){ return b.value - a.value; });
 }
 function draw(data){
-	var canvas = document.getElementsByTagName("canvas")[0];
-	var cxt = canvas.getContext("2d");
 	var square = document.getElementsByName("Layout")[0];
-	cxt.clearRect(0,0,w,h);
-	cxt.textAlign = "center";
-	cxt.textBaseline = "middle";
-	cxt.fillStyle = "black";
+	cxt1.clearRect(0,0,w,h);
 	var fix = {x:w/2,y:h/2};
-	var position = [];
-	var startPosition = {x:w/2, y:h/2 - 5};
+	var position = {x:w/2, y:h/2 - 5};
 	var id = 0;
-	position.push(startPosition);
 	if(square.checked === true) {
-		for (var i = 0; i < 10000; i++) {
-			console.log(i);
-			position.push(getNextPosition2(fix, position[position.length - 1], 5));
-		}
+		var getPosition = getNextPosition2;
 	}
 	else{
-		for (var i = 0; i < 10000; i++) {
-			console.log(i);
-			position.push(getNextPosition(fix, position[position.length - 1], 5));
-		}
+		var getPosition = getNextPosition;
 	}
 	for(var i = 0; i < data.length; i++) {
 		var fontSize = data[i].value*5;
-		cxt.font = fontSize + "px Arial";
-		//console.log(i);
+		cxt1.font = fontSize + "px Arial";
 		if(i === 0){
-			cxt.fillText(data[0].text, fix.x, fix.y);
+			cxt1.fillText(data[0].text, fix.x, fix.y);
 			continue;
 		}
+		position = {x:w/2, y:h/2 - 5};
 		id = 0;
 		while(1){
-			if(!isOverLap(fontSize, cxt.measureText(data[i].text).width, position[id], data[i].text)){
+			if(!isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text)){
 				break;
 			}
-			//id+=Math.floor(1+Math.random()*5);
-			id+=1;
+			position = getPosition(fix, position, fontSize, cxt1.measureText(data[i].text).width/data[i].text.length);
+			id++;
 		}
-		cxt.fillText(data[i].text, position[id].x, position[id].y);
-		console.log(i+"----"+id);
+		cxt1.fillText(data[i].text, position.x, position.y);
+		console.log(i+"------"+id);
 	}
 }
 function isOverLap(height, width, position, text){
-	var canvas1 = document.getElementsByTagName("canvas")[0];
-	var canvas2 = document.getElementsByTagName("canvas")[1];
 	var padding = 0;
-	var cxt1 = canvas1.getContext("2d");
-	var cxt2 = canvas2.getContext("2d");
 	var oldData = cxt1.getImageData(position.x - width/2 - padding, position.y - height/2 - padding, width + 2*padding, height + 2*padding);
 	cxt2.font = height + "px Arial";
-	cxt2.textAlign = "center";
-	cxt2.textBaseline = "middle";
-	cxt2.fillStyle = "black";
 	cxt2.fillText(text, width/2 + padding, height/2 + padding);
 	var newData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
 	cxt2.clearRect(0,0,_w,_h);
@@ -144,28 +132,28 @@ function getNextPosition(fix, position, addAngle){
 	//console.log(newAngle + " " + dx + " " + dy);
 	return {x:fix.x+dx,y:fix.y-dy};
 }
-function getNextPosition2(fix, position, len){
+function getNextPosition2(fix, position, hLen, wLen){
 	var dx = position.x - fix.x;
 	var dy = -position.y + fix.y;
 	if(Math.abs(dx) < Math.abs(dy)){
-		dx += (dy/Math.abs(dy)) * len;
+		dx += (dy/Math.abs(dy)) * wLen;
 	}
 	else if(Math.abs(dx) === Math.abs(dy)){
 		if(dx < 0 && dy > 0){
-			dy += len;
+			dy += hLen;
 		}
 		else if(dx > 0 && dy > 0){
-			dy -= len;
+			dy -= hLen;
 		}
 		else if(dx > 0 && dy < 0){
-			dx -= len;
+			dx -= wLen;
 		}
 		else{
-			dy += len;
+			dy += hLen;
 		}
 	}
 	else{
-		dy += -(dx/Math.abs(dx)) * len;
+		dy += -(dx/Math.abs(dx)) * hLen;
 	}
 	return {x:fix.x + dx, y:fix.y - dy};
 }
