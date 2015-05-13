@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html>
+<input>
 	<head>
 	<meta charset="UTF-8">
 		<script type="text/javascript" src="d3.js"></script>
 	</head>
-	<body>
+	<input>
 		<canvas></canvas>
 		<br/>
 		<textarea rows="15" cols="80">
@@ -12,7 +12,8 @@
 		</textarea>
 		<button onclick="transition()">Update</button>
 		<button onclick="sample()">Sample</button>
-		<br/>
+		<input type="radio" name="Layout" value="square" checked="true">squareLayout</input>
+		<input type="radio" name="Layout" value="circle">circleLayout</input>
 		<canvas></canvas>
 	</body>
 </html>
@@ -58,6 +59,7 @@ function text2Words(str){
 function draw(data){
 	var canvas = document.getElementsByTagName("canvas")[0];
 	var cxt = canvas.getContext("2d");
+	var square = document.getElementsByName("Layout")[0];
 	cxt.clearRect(0,0,w,h);
 	cxt.textAlign = "center";
 	cxt.textBaseline = "middle";
@@ -67,9 +69,17 @@ function draw(data){
 	var startPosition = {x:w/2, y:h/2 - 5};
 	var id = 0;
 	position.push(startPosition);
-	for(var i = 0; i < 10000; i++){
-		console.log(i);
-		position.push(getNextPosition2(fix, position[position.length-1], 5));
+	if(square.checked === true) {
+		for (var i = 0; i < 10000; i++) {
+			console.log(i);
+			position.push(getNextPosition2(fix, position[position.length - 1], 5));
+		}
+	}
+	else{
+		for (var i = 0; i < 10000; i++) {
+			console.log(i);
+			position.push(getNextPosition(fix, position[position.length - 1], 5));
+		}
 	}
 	for(var i = 0; i < data.length; i++) {
 		var fontSize = data[i].value*5;
@@ -115,17 +125,23 @@ function isOverLap(height, width, position, text){
 	}
 	return false;
 }
-function getNextPosition(fix, position, addangle){
-	var len = 1;
+function getNextPosition(fix, position, addAngle){
+	var len = 0;
 	var r = Math.sqrt(Math.pow(position.x - fix.x, 2) + Math.pow(position.y - fix.y, 2));
-	addangle = (addangle / 360) * 2 * Math.PI;
-	var currentangle = Math.atan2(-position.y + fix.y, position.x - fix.x);
-	var newangle = currentangle - addangle;
-	if(newangle < -1 * Math.PI){
-		newangle += 2 * Math.PI;
+	addAngle = (addAngle / 360) * 2 * Math.PI;
+	var currentAngle = Math.atan2(-position.y + fix.y, position.x - fix.x);
+	var newAngle = currentAngle - addAngle;
+	if(newAngle < -1 * Math.PI){
+		newAngle += 2 * Math.PI;
+		len = 1;
 	}
-	var dx = Math.cos(newangle)*(r+len), dy = Math.sin(newangle)*(r+len);
-	console.log(newangle + " " + dx + " " + dy);
+	if((currentAngle >=　Math.PI * 0.5 && newAngle < Math.PI * 0.5)
+		||(currentAngle >= 0 && newAngle < 0)
+		||(currentAngle >= Math.PI * -0.5 && newAngle < Math.PI * -0.5)){
+		len = 1;
+	}
+	var dx = Math.cos(newAngle)*(r+len), dy = Math.sin(newAngle)*(r+len);
+	//console.log(newAngle + " " + dx + " " + dy);
 	return {x:fix.x+dx,y:fix.y-dy};
 }
 function getNextPosition2(fix, position, len){
