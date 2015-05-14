@@ -88,15 +88,10 @@ function draw(data){
 			console.log(i + "------" + data[i].text);
 		}
 		else {
-//			var d = Math.round(Math.random() * 10) - 5;
-//			if(preFont != fontSize) {
-//				position = {x: w / 2, y: h / 2 + d};
-//				preFont = fontSize;
-//			}
-			//position = {x: w / 2, y: h / 2 - 5};
+			if(i%100 == 0) { position = {x: w / 2, y: h / 2 - 5}; }
 			id = 0;
 			while (isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text, id)) {
-				position = getPosition(fix, position, 5, 5);
+				position = getPosition(fix, position, Math.max(fontSize/5, 5), Math.max(fontSize/5, 5));
 				id++;
 			}
 			cxt1.fillText(data[i].text, position.x, position.y);
@@ -114,14 +109,12 @@ function isOverLap(height, width, position, text, id){
 		newData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
 		newPix = compress(newData.data);
 	}
-	var bg = 0;
 	var oldPix = compress(oldData.data);
 	var oldPixel = 0;
 	var newPixel = 0;
 	var j = 0;
 	for(var i = 0; i < oldPix.length; i++){
-		if((oldPix[i]&newPix[i]) != 0)
-			return true;
+		if((oldPix[i]&newPix[i]) != 0) { return true; }
 	}
 	return false;
 }
@@ -190,7 +183,6 @@ function transition(){
 }
 function sample(){
 	d3.json("word.json", function(json) {
-		console.log(json);  //Log output to console
 		if(json != null) {
 			draw(json);
 		}
