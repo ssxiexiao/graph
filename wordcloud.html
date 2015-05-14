@@ -27,6 +27,8 @@ var canvas1 = document.getElementsByTagName("canvas")[0];
 var canvas2 = document.getElementsByTagName("canvas")[1];
 var cxt1 = canvas1.getContext("2d");
 var cxt2 = canvas2.getContext("2d");
+var newData = null;
+var newPix = null;
 window.onload = function(){
 	canvas1.setAttribute("width", w);
 	canvas1.setAttribute("height", h);
@@ -83,37 +85,43 @@ function draw(data){
 		cxt1.font = fontSize + "px Arial";
 		if(i === 0){
 			cxt1.fillText(data[i].text, fix.x, fix.y);
+			console.log(i + "------" + data[i].text);
 		}
 		else {
-			var d = Math.round(Math.random() * 10) - 5;
-			if(preFont != fontSize) {
-				position = {x: w / 2, y: h / 2 + d};
-				preFont = fontSize;
-			}
+//			var d = Math.round(Math.random() * 10) - 5;
+//			if(preFont != fontSize) {
+//				position = {x: w / 2, y: h / 2 + d};
+//				preFont = fontSize;
+//			}
+			position = {x: w / 2, y: h / 2 - 5};
 			id = 0;
-			while (isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text)) {
+			while (isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text, id)) {
 				position = getPosition(fix, position, 5, 5);
 				id++;
 			}
 			cxt1.fillText(data[i].text, position.x, position.y);
+			cxt2.clearRect(0,0,_w,_h);
 			console.log(i + "------" + id);
 		}
 	}
 }
-function isOverLap(height, width, position, text){
+function isOverLap(height, width, position, text, id){
 	var padding = 1;
 	var oldData = cxt1.getImageData(position.x - width/2 - padding, position.y - height/2 - padding, width + 2*padding, height + 2*padding);
-	cxt2.font = height + "px Arial";
-	cxt2.fillText(text, width/2 + padding, height/2 + padding);
-	var newData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
-	cxt2.clearRect(0,0,_w,_h);
+	if(id === 0) {
+		cxt2.font = height + "px Arial";
+		cxt2.fillText(text, width / 2 + padding, height / 2 + padding);
+		newData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
+		newPix = newData.data;
+	}
 	var bg = 0;
 	var oldPix = oldData.data;
-	var newPix = newData.data;
-	for(var i = 0; i < oldPix.length; i+=4){
-		if(oldPix[i+3] != bg && newPix[i+3] != bg){
+	var oldPixel = 0;
+	var newPixel = 0;
+	var j = 0;
+	for(var i = 3; i < oldPix.length; i+=4){
+		if((oldPix[i]&newPix[i]) != 0)
 			return true;
-		}
 	}
 	return false;
 }
