@@ -82,7 +82,7 @@ function draw(data){
 	}
 	for(var i = 0; i < data.length; i++) {
 		var fontSize = Math.pow(data[i].value,1.2)*5+5;
-		cxt1.font = fontSize + "px Arial";
+		cxt1.font = fontSize + "px Impact";
 		if(i === 0){
 			cxt1.fillText(data[i].text, fix.x, fix.y);
 			console.log(i + "------" + data[i].text);
@@ -93,7 +93,7 @@ function draw(data){
 //				position = {x: w / 2, y: h / 2 + d};
 //				preFont = fontSize;
 //			}
-			position = {x: w / 2, y: h / 2 - 5};
+			//position = {x: w / 2, y: h / 2 - 5};
 			id = 0;
 			while (isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text, id)) {
 				position = getPosition(fix, position, 5, 5);
@@ -109,21 +109,33 @@ function isOverLap(height, width, position, text, id){
 	var padding = 1;
 	var oldData = cxt1.getImageData(position.x - width/2 - padding, position.y - height/2 - padding, width + 2*padding, height + 2*padding);
 	if(id === 0) {
-		cxt2.font = height + "px Arial";
+		cxt2.font = height + "px Impact";
 		cxt2.fillText(text, width / 2 + padding, height / 2 + padding);
 		newData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
-		newPix = newData.data;
+		newPix = compress(newData.data);
 	}
 	var bg = 0;
-	var oldPix = oldData.data;
+	var oldPix = compress(oldData.data);
 	var oldPixel = 0;
 	var newPixel = 0;
 	var j = 0;
-	for(var i = 3; i < oldPix.length; i+=4){
+	for(var i = 0; i < oldPix.length; i++){
 		if((oldPix[i]&newPix[i]) != 0)
 			return true;
 	}
 	return false;
+}
+function compress(pixels){
+	var c_pixels = [];
+	var c_pix = 0;
+	for(var i = 0; i < pixels.length; i+=120){
+		c_pix = 0;
+		for(var j = i; j < i+120 && j < pixels.length; j+=4){
+			c_pix = (c_pix<<1) + (pixels[j+3]%254);
+		}
+		c_pixels.push(c_pix);
+	}
+	return c_pixels;
 }
 function getNextPosition(fix, position, addAngle){
 	var len = 0;
