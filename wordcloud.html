@@ -20,7 +20,7 @@
 
 <script type="text/javascript">
 var w = 1200;
-var h = 800;
+var h = 600;
 var _w = 500;
 var _h = 500;
 var canvas1 = document.getElementsByTagName("canvas")[0];
@@ -81,20 +81,19 @@ function draw(data){
 		var fontSize = data[i].value*5;
 		cxt1.font = fontSize + "px Arial";
 		if(i === 0){
-			cxt1.fillText(data[0].text, fix.x, fix.y);
-			continue;
+			cxt1.fillText(data[i].text, fix.x, fix.y);
 		}
-		position = {x:w/2, y:h/2 - 5};
-		id = 0;
-		while(1){
-			if(!isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text)){
-				break;
+		else {
+			if(i % 10 == 0)
+				position = {x: w / 2, y: h / 2 - 5};
+			id = 0;
+			while (isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text)) {
+				position = getPosition(fix, position, 5, 5);
+				id++;
 			}
-			position = getPosition(fix, position, 5, 5);
-			id++;
+			cxt1.fillText(data[i].text, position.x, position.y);
+			console.log(i + "------" + id);
 		}
-		cxt1.fillText(data[i].text, position.x, position.y);
-		console.log(i+"------"+id);
 	}
 }
 function isOverLap(height, width, position, text){
@@ -168,7 +167,9 @@ function transition(){
 function sample(){
 	d3.json("word.json", function(json) {
 		console.log(json);  //Log output to console
-		draw(json);
+		if(json != null) {
+			draw(json);
+		}
 	});
 }
 </script>
