@@ -5,8 +5,6 @@
 		<script type="text/javascript" src="d3.js"></script>
 	</head>
 	<body>
-		<canvas></canvas>
-		<br/>
 		<textarea rows="15" cols="80">
 		The transformation step is most important, as this is where the mapping happens. D3 provides a structure for applying these transformations, but, as we’ll see, you define the mapping rules. Should larger values make taller bars or brighter circles? Will clusters be sorted on the x-axis by age or category? What color palette is used to fill in countries on your world map? All of the visual design decisions are up to you. You provide the concept, you craft the rules, and D3 executes it—without telling you what to do. (Yes, it’s like the opposite of Excel’s pushy “Chart Wizard.”)
 		</textarea>
@@ -15,18 +13,21 @@
 		<input type="radio" name="Layout" value="square" checked="true">squareLayout</input>
 		<input type="radio" name="Layout" value="circle">circleLayout</input>
 		<canvas></canvas>
+		<canvas></canvas>
 	</body>
 </html>
 
 <script type="text/javascript">
 var w = 800;
 var h = 800;
-var _w = 500;
-var _h = 500;
+var _w = 800;
+var _h = 800;
 var canvas1 = document.getElementsByTagName("canvas")[0];
 var canvas2 = document.getElementsByTagName("canvas")[1];
 var cxt1 = canvas1.getContext("2d");
 var cxt2 = canvas2.getContext("2d");
+var oldData = null;
+var oldPix = null;
 var newData = null;
 var newPix = null;
 window.onload = function(){
@@ -67,7 +68,6 @@ function text2Words(str){
 	return res.sort(function(a,b){ return b.value - a.value; });
 }
 function draw(data){
-	var preFont = -1;
 	var square = document.getElementsByName("Layout")[0];
 	cxt1.clearRect(0,0,w,h);
 	var fix = {x:w/2,y:h/2};
@@ -81,54 +81,64 @@ function draw(data){
 		var getPosition = getNextPosition;
 	}
 	for(var i = 0; i < data.length; i++) {
-		var fontSize = Math.pow(data[i].value,1.2)*5+5;
+		var fontSize = data[i].value*6 + 6;
 		cxt1.font = fontSize + "px Impact";
 		if(i === 0){
 			cxt1.fillText(data[i].text, fix.x, fix.y);
-			console.log(i + "------" + data[i].text);
+			oldData = cxt1.getImageData(0, 0, w, h);
+			oldPix = oldData.data;
+			//console.log(i);
 		}
 		else {
-			if(i%100 == 0) { position = {x: w / 2, y: h / 2 - 5}; }
+			position = {x: w / 2, y: h / 2 - 5};
 			id = 0;
-			while (isOverLap(fontSize, cxt1.measureText(data[i].text).width, position, data[i].text, id)) {
-				position = getPosition(fix, position, Math.max(fontSize/5, 5), Math.max(fontSize/5, 5));
+			var width = cxt1.measureText(data[i].text).width;
+			while (isOverLap(fontSize, width, position, data[i].text, id)) {
+				position = getPosition(fix, position, 5);
 				id++;
 			}
 			cxt1.fillText(data[i].text, position.x, position.y);
-			cxt2.clearRect(0,0,_w,_h);
-			console.log(i + "------" + id);
+			console.log(i);
 		}
+	}
+}
+function update(position, imgData){
+	for(var i = 0; i < imgData.data.length/4; i++){
+		var x = i%imgData.width + position.x - imgData.width/2;
+		var y = Math.floor(i/imgData.width) + position.y - imgData.height/2;
+		var id = y*oldData.height+x;
+		oldPix[id*4+3] += imgData.data[i*4+3];
 	}
 }
 function isOverLap(height, width, position, text, id){
-	var padding = 1;
-	var oldData = cxt1.getImageData(position.x - width/2 - padding, position.y - height/2 - padding, width + 2*padding, height + 2*padding);
-	if(id === 0) {
-		cxt2.font = height + "px Impact";
-		cxt2.fillText(text, width / 2 + padding, height / 2 + padding);
-		newData =  cxt2.getImageData(0, 0, width + 2*padding, height + 2*padding);
-		newPix = compress(newData.data);
-	}
-	var oldPix = compress(oldData.data);
-	var oldPixel = 0;
-	var newPixel = 0;
-	var j = 0;
-	for(var i = 0; i < oldPix.length; i++){
-		if((oldPix[i]&newPix[i]) != 0) { return true; }
-	}
-	return false;
-}
-function compress(pixels){
-	var c_pixels = [];
-	var c_pix = 0;
-	for(var i = 0; i < pixels.length; i+=120){
-		c_pix = 0;
-		for(var j = i; j < i+120 && j < pixels.length; j+=4){
-			c_pix = (c_pix<<1) + (pixels[j+3]%254);
+	if(id == 0) {
+		if(Math.round(width)%2 != 0){
+			var _width = Math.round(width) + 1;
 		}
-		c_pixels.push(c_pix);
+		else{
+			var _width = Math.round(width);
+		}
+		if(Math.round(height)%2 != 0){
+			var _height = Math.round(height) + 1;
+		}
+		else{
+			var _height = Math.round(height);
+		}
+		cxt2.font = height + "px Impact";
+		cxt2.fillText(text, _width/2, _height/2);
+		newData =  cxt2.getImageData(0, 0, _width, _height);
+		newPix = newData.data;
+		console.log()
 	}
-	return c_pixels;
+	for(var i = 0; i < newPix.length/4; i++){
+		var x = i%newData.width + position.x - newData.width/2;
+		var y = Math.floor(i/newData.width) + position.y - newData.height/2;
+		var id = y*oldData.height+x;
+		if((oldPix[id*4+3]&newPix[i*4+3]) != 0) { return true; }
+	}
+	update(position, newData);
+	cxt2.clearRect(0,0,newData.width,newData.height);
+	return false;
 }
 function getNextPosition(fix, position, addAngle){
 	var len = 0;
@@ -146,31 +156,30 @@ function getNextPosition(fix, position, addAngle){
 		len = 1;
 	}
 	var dx = Math.cos(newAngle)*(r+len), dy = Math.sin(newAngle)*(r+len);
-	//console.log(newAngle + " " + dx + " " + dy);
-	return {x:fix.x+dx,y:fix.y-dy};
+	return {x:Math.floor(fix.x+dx),y:Math.floor(fix.y-dy)};
 }
-function getNextPosition2(fix, position, hLen, wLen){
+function getNextPosition2(fix, position, len){
 	var dx = position.x - fix.x;
 	var dy = -position.y + fix.y;
 	if(Math.abs(dx) < Math.abs(dy)){
-		dx += (dy/Math.abs(dy)) * wLen;
+		dx += (dy/Math.abs(dy)) * len;
 	}
 	else if(Math.abs(dx) === Math.abs(dy)){
 		if(dx < 0 && dy > 0){
-			dy += hLen;
+			dy += len;
 		}
 		else if(dx > 0 && dy > 0){
-			dy -= hLen;
+			dy -= len;
 		}
 		else if(dx > 0 && dy < 0){
-			dx -= wLen;
+			dx -= len;
 		}
 		else{
-			dy += hLen;
+			dy += len;
 		}
 	}
 	else{
-		dy += -(dx/Math.abs(dx)) * hLen;
+		dy += -(dx/Math.abs(dx)) * len;
 	}
 	return {x:fix.x + dx, y:fix.y - dy};
 }
@@ -178,7 +187,7 @@ function transition(){
 	var canvas = document.getElementsByTagName("canvas")[0];
 	var text = document.getElementsByTagName("textarea")[0].value;
 	var data = text2Words(text);
-	console.log(data);
+	//console.log(data);
 	draw(data);
 }
 function sample(){
