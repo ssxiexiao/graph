@@ -5,23 +5,25 @@
 		<script type="text/javascript" src="d3.js"></script>
 	</head>
 	<body>
-		<textarea rows="15" cols="80">
-		The transformation step is most important, as this is where the mapping happens. D3 provides a structure for applying these transformations, but, as we’ll see, you define the mapping rules. Should larger values make taller bars or brighter circles? Will clusters be sorted on the x-axis by age or category? What color palette is used to fill in countries on your world map? All of the visual design decisions are up to you. You provide the concept, you craft the rules, and D3 executes it—without telling you what to do. (Yes, it’s like the opposite of Excel’s pushy “Chart Wizard.”)
-		</textarea>
-		<button onclick="transition()">Update</button>
-		<button onclick="sample()">Sample</button>
-		<input type="radio" name="Layout" value="square" checked="true">squareLayout</input>
-		<input type="radio" name="Layout" value="circle">circleLayout</input>
+		<div>
+			<textarea rows="15" cols="80">
+			The transformation step is most important, as this is where the mapping happens. D3 provides a structure for applying these transformations, but, as we’ll see, you define the mapping rules. Should larger values make taller bars or brighter circles? Will clusters be sorted on the x-axis by age or category? What color palette is used to fill in countries on your world map? All of the visual design decisions are up to you. You provide the concept, you craft the rules, and D3 executes it—without telling you what to do. (Yes, it’s like the opposite of Excel’s pushy “Chart Wizard.”)
+			</textarea>
+			<button onclick="transition()">Update</button>
+			<button onclick="sample()">Sample</button>
+			<input type="radio" name="Layout" value="square" checked="true">squareLayout</input>
+			<input type="radio" name="Layout" value="circle">circleLayout</input>
+		</div>>
 		<canvas></canvas>
 		<canvas></canvas>
 	</body>
 </html>
 
 <script type="text/javascript">
-var w = 800;
-var h = 800;
-var _w = 800;
-var _h = 800;
+var w = 500;
+var h = 500;
+var _w = 500;
+var _h = 500;
 var canvas1 = document.getElementsByTagName("canvas")[0];
 var canvas2 = document.getElementsByTagName("canvas")[1];
 var cxt1 = canvas1.getContext("2d");
@@ -81,7 +83,7 @@ function draw(data){
 		var getPosition = getNextPosition;
 	}
 	for(var i = 0; i < data.length; i++) {
-		var fontSize = data[i].value*6 + 6;
+		var fontSize = data[i].value*4 + 6;
 		cxt1.font = fontSize + "px Impact";
 		if(i === 0){
 			cxt1.fillText(data[i].text, fix.x, fix.y);
@@ -137,7 +139,7 @@ function isOverLap(height, width, position, text, id){
 		if((oldPix[id*4+3]&newPix[i*4+3]) != 0) { return true; }
 	}
 	update(position, newData);
-	cxt2.clearRect(0,0,newData.width,newData.height);
+	cxt2.clearRect(0,0,_w,_h);
 	return false;
 }
 function getNextPosition(fix, position, addAngle){
