@@ -1,3 +1,5 @@
-.div{
-    border:1px solid black;
+.node{
+    overflow:hidden;
+    position:absolute;
+    border: 1px solid white;
 }
