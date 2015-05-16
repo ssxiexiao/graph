@@ -6,23 +6,18 @@ function squarify(rect, children, row, w, id){
     var head = children[id];
     var _row = row.slice(0);
     _row.push(head);
-    console.log(worst(row, w));
-    console.log(worst(_row, w));
-    if(worst(row, w) >=worst(_row, w)){
+    if(row.length == 0 || worst(row, w) >=worst(_row, w)){
         squarify(rect, children, _row, w, id+1);
     }
     else{
         var newRect = layoutRow(rect, row);
-        squarify(newRect, children, [], width(rect), id);
+        squarify(newRect, children, [], width(newRect), id);
     }
 }
 function worst(R, w){
     var sum = 0;
-    var _max = 99999999;
+    var _max = 999999999;
     var ratio = [];
-    if(R.length === 0){
-        return _max;
-    }
     for(var i = 0; i < R.length; i++){
         sum += R[i].size;
     }
