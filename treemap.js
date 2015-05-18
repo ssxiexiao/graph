@@ -132,9 +132,9 @@ function preProcess2(data, factor){
     }
 }
 function genColor(){
-    var r = Math.floor(Math.random()*256);
-    var g = Math.floor(Math.random()*256);
-    var b = Math.floor(Math.random()*256);
+    var r = Math.floor(Math.random()*100)+100;
+    var g = Math.floor(Math.random()*100)+100;
+    var b = Math.floor(Math.random()*100)+100;
     return "rgb("+r+","+g+","+b+")";
 }
 window.onload = function(){
@@ -144,7 +144,7 @@ window.onload = function(){
     div0.style.position = "relative";
     div0.className = "box";
     document.getElementsByTagName("body")[0].appendChild(div0);
-    d3.json("flare.json", function(json) {
+    d3.json("treemap_flare.json", function(json) {
         if(json != null) {
             preProcess(json);
             console.log(json);
