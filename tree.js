@@ -9,21 +9,16 @@ function genLink(a, b){
 }
 function Forward(data){
     var xLen = 200;
+    var yLen = 30;
     data.oldPosition.x = data.currentPosition.x;
     data.oldPosition.y = data.currentPosition.y;
     if(data.status == "unfold") {
         if (data.children) {
-            var len = data.children[0].len / 2 + data.children[data.children.length-1].len / 2;
-            len = data.len - len;
-            var x = data.newPosition.x;
-            var y = data.newPosition.y;
-            data.children[0].newPosition.x = x + xLen;
-            data.children[0].newPosition.y = y - len / 2;
+            data.children[0].newPosition.x = data.newPosition.x + xLen;
+            data.children[0].newPosition.y = data.newPosition.y - yLen*(data.children.length-1)/2;
             for(var i = 1; i < data.children.length; i++){
-                x = data.children[i-1].newPosition.x;
-                y = data.children[i-1].newPosition.y;
-                data.children[i].newPosition.x =  x;
-                data.children[i].newPosition.y = y + data.children[i - 1].len / 2 + data.children[i].len / 2;
+                data.children[i].newPosition.x = data.newPosition.x + xLen;
+                data.children[i].newPosition.y = data.children[i-1].newPosition.y + yLen;
             }
             for(var i = 0; i < data.children.length; i++){
                 Forward(data.children[i]);
@@ -33,6 +28,70 @@ function Forward(data){
     else if(data.status == "fold"){
         Fold(data);
     }
+}
+function BackForWard(data){
+    var minLen = 30;
+    var id = GetLayerNum(data);
+    for(var i = id; i > 1; i--){
+        var layer = GetLayer(data, i);
+        for(var j = 1; j < layer.length; j++){
+            if(layer[j].data.newPosition.y < layer[j-1].data.newPosition.y + minLen){
+                var dy = layer[j-1].data.newPosition.y + minLen - layer[j].data.newPosition.y;
+                shift(layer[j].data, dy);
+            }
+            var head = layer[j].parent.children[0].newPosition,
+                end = layer[j].parent.children[layer[j].parent.children.length-1].newPosition;
+            layer[j].parent.newPosition.y = (head.y+end.y)/2;
+        }
+    }
+}
+function End(data){
+    if(data.status == "unfold") {
+        if (data.children) {
+            for(var i = 0; i < data.children.length; i++){
+                End(data.children[i]);
+            }
+        }
+    }
+    else if(data.status == "fold"){
+        Fold(data);
+    }
+}
+function shift(data, len){
+    data.newPosition.y += len;
+    if(data.children){
+        for(var i = 0; i < data.children.length; i++){
+            shift(data.children[i], len);
+        }
+    }
+}
+function GetLayerNum(data){
+    var i = 1;
+    while(GetLayer(data, i).length){
+        i++;
+    }
+    return i-1;
+}
+function GetLayer(data, id){
+    var layer = [];
+    var queue = [];
+    var count = 0;
+    queue.push({id:1, data:data});
+    while(queue.length){
+        var q = queue.shift();
+        if(q.id == id){
+            layer.push({data:q.data, parent: q.parent, num: q.num});
+        }
+        if(q.id > id){
+            break;
+        }
+        if(q.data.status =="unfold" && q.data.children){
+            for(var i = 0; i < q.data.children.length; i++){
+                queue.push({id: q.id+1, data: q.data.children[i], parent: q.data, num: i});
+            }
+        }
+    }
+    return layer;
 }
 function Fold(data){
     if(data.children){
@@ -45,14 +104,21 @@ function Fold(data){
         }
     }
 }
+
 function draw(data, part){
     if(part === 0){
         data.currentPosition.x = data.newPosition.x;
         data.currentPosition.y = data.newPosition.y;
+        data.oldPosition.x = data.currentPosition.x;
+        data.oldPosition.y = data.currentPosition.y;
     }
     else{
         data.currentPosition.x = (count/part)*(data.newPosition.x - data.oldPosition.x) + data.oldPosition.x;
         data.currentPosition.y = (count/part)*(data.newPosition.y - data.oldPosition.y) + data.oldPosition.y;
+        if(count == part){
+            data.oldPosition.x = data.currentPosition.x;
+            data.oldPosition.y = data.currentPosition.y;
+        }
     }
     data.node.setAttribute("cx", data.currentPosition.x);
     data.node.setAttribute("cy", data.currentPosition.y);
@@ -93,12 +159,16 @@ function PreProcess(data){
     node.onclick = function(){
         if(data.status == "fold"){
             data.status = "unfold";
+            Forward(data);
         }
         else{
             data.status = "fold";
+            Forward(dataset);
         }
-        Calculate(dataset);
-        Forward(dataset);
+        BackForWard(dataset);
+        End(dataset);
+        var dy = dataset.oldPosition.y - dataset.newPosition.y;
+        shift(dataset, dy);
         var part = 20;
         var period = 10;
         for(var i = 0; i < part; i++){
@@ -113,26 +183,11 @@ function PreProcess(data){
     svg.appendChild(data.node);
     //svg.appendChild(data.text);
 }
-function Calculate(data){
-    var minLen = 30;
-    if(data.status == "unfold" && data.children){
-        var len = 0;
-        for(var i = 0; i < data.children.length; i++){
-            Calculate(data.children[i]);
-            len += data.children[i].len;
-            //len += minLen;
-        }
-        data.len = len;
-    }
-    else if(data.status == "fold" || !data.children){
-        data.len = minLen;
-    }
-}
 var dataset = null;
 var count = 0;
 window.onload = function(){
     var w = 1600,
-        h = 1600;
+        h = 3000;
     var svg = document.getElementsByTagName("svg")[0];
     svg.setAttribute("width", w);
     svg.setAttribute("height", h);
@@ -143,8 +198,9 @@ window.onload = function(){
         dataset.currentPosition.y = h/2;
         dataset.newPosition.x = 100;
         dataset.newPosition.y = h/2;
-        Calculate(dataset);
         Forward(dataset);
+        BackForWard(dataset);
+        End(dataset);
         draw(dataset, 0);
     })
 }
