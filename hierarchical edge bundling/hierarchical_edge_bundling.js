@@ -23,16 +23,20 @@ window.onload = function(){
             text.innerHTML = getClass(json[i].name);
             text.setAttribute("font-size", fontSize+"px");
             text.setAttribute("font-family", "Arial");
+            text.setAttribute("dominant-baseline", "middle");
             package[hasPackage(package, getPackage(json[i].name))].texts.push(text);
+            package[hasPackage(package, getPackage(json[i].name))].positions.push({});
             svg.appendChild(text);
         }
         var fontSum = 0;
         for(var i = 0; i < package.length; i++){
             fontSum += package[i].classes.length;
         }
+        console.log(fontSum);
         var r = parseInt(circle.getAttribute("r"));
         interval_class = (2 * Math.PI) / (fontSum + package.length);
         setText(circle, package, interval_class);
+        draw(package);
     });
 }
 function getPackage(str){
@@ -49,44 +53,52 @@ function hasPackage(arr, name){
             return i;
         }
     }
-    arr.push({name:name, classes:[], texts:[]});
+    arr.push({name:name, classes:[], texts:[], positions:[]});
     return arr.length - 1;
 }
 function setText(circle, package, interval_class){
     var cx = parseInt(circle.getAttribute("cx"));
     var cy = parseInt(circle.getAttribute("cy"));
     var r = parseInt(circle.getAttribute("r"));
-    var currentPosition = {x:cx - r, y:cy, angle:180};
+    var currentPosition = {x:cx+r, y:cy, angle:0};
+    var base = "start";
     for(var i = 0; i < package.length; i++){
         for(var j = 0; j < package[i].classes.length; j++){
+            package[i].positions[j] = currentPosition;
+            currentPosition = getNextPosition({x:cx, y:cy}, currentPosition, interval_class, r);
+        }
+        currentPosition = getNextPosition({x:cx, y:cy}, currentPosition, interval_class, r);
+    }
+}
+function draw(package){
+    var base = "start";
+    for(var i = 0; i < package.length; i++){
+        for(var j = 0; j < package[i].classes.length; j++){
+            var currentPosition = package[i].positions[j];
             package[i].texts[j].setAttribute("x", currentPosition.x);
             package[i].texts[j].setAttribute("y", currentPosition.y);
             var angle = currentPosition.angle;
-            if(angle < 0){
+            if(angle <=0){
                 angle = 360 + angle;
             }
-            console.log(angle);
-            if(angle < 90 || angle > 270) {
+            if((angle < 90 && angle>=0) || (angle > 270 && angle < 0)) {
                 angle = 360 - angle;
-                package[i].texts[j].setAttribute("text-anchor", "start");
+                base = "start";
             }
             else{
-                package[i].texts[j].setAttribute("text-anchor", "end");
+                base = "end";
                 angle = 360 - angle + 180;
             }
+            package[i].texts[j].setAttribute("text-anchor", base);
             package[i].texts[j].setAttribute("transform","rotate("+angle+" "+currentPosition.x+" "+currentPosition.y+")");
-            if(j < (package[i].classes.length-1)){
-                currentPosition = getNextPosition({x:cx, y:cy}, currentPosition, interval_class, r);
-            }
         }
-        currentPosition = getNextPosition({x:cx, y:cy}, currentPosition, interval_class*2, r);
     }
 }
 function getNextPosition(fix, position, addAngle, r){
     var currentAngle = Math.atan2(-position.y + fix.y, position.x - fix.x);
     var newAngle = currentAngle - addAngle;
-    if(newAngle < -Math.PI){
-        newAngle = 2*Math.PI + newAngle;
+    if(newAngle <= -Math.PI){
+        newAngle += (2*Math.PI);
     }
     var dx = r * Math.cos(newAngle);
     var dy = r * Math.sin(newAngle);
