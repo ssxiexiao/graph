@@ -1,100 +1,55 @@
+var currentPosition = {};
+var centerPosition = {};
+var interval = 0;
+var beta = 0.8;
 window.onload = function(){
     var w = 1000;
     var h = 1000;
     var padding = 130;
+    var r = Math.min(w/2, h/2) - padding;
+    currentPosition = {x:w/2+r, y:h/2};
+    centerPosition = {x:w/2, y:h/2};
     var svg = document.getElementsByTagName("svg")[0];
     svg.setAttribute("width", w);
     svg.setAttribute("height", h)
     var circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
     circle.setAttribute("cx",w/2);
     circle.setAttribute("cy", h/2);
-    circle.setAttribute("r", Math.min(w/2, h/2) - padding);
-    //circle.setAttribute("stroke", "blue");
-    //circle.setAttribute("stroke-width", "2");
+    circle.setAttribute("r", r);
     circle.setAttribute("fill", "white");
     svg.appendChild(circle);
-    var package = [];
-    var interval_class = 0;
-    var fontSize = 10;
     d3.json("flare-import.json", function(json){
-        for(var i = 0; i < json.length; i++){
-            package[hasPackage(package, getPackage(json[i].name))].classes.push(getClass(json[i].name));
-            var text = document.createElementNS("http://www.w3.org/2000/svg","text");
-            text.innerHTML = getClass(json[i].name);
-            text.setAttribute("font-size", fontSize+"px");
-            text.setAttribute("font-family", "Arial");
-            text.setAttribute("dominant-baseline", "middle");
-            package[hasPackage(package, getPackage(json[i].name))].texts.push(text);
-            package[hasPackage(package, getPackage(json[i].name))].positions.push({});
-            svg.appendChild(text);
+        interval = (2*Math.PI) / json.length;
+        var tree = genTree(json);
+        setPosition(tree, 1);
+        rotateText(tree, 1);
+        for(var i = 0; i < json.length; i++) {
+            for (var j = 0; j < json[i].imports.length; j++) {
+                var _path = LCA(tree, json[i].name, json[i].imports[j]);
+                var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                fix(_path);
+                svg.appendChild(path);
+                setPath(path, _path);
+            }
         }
-        var fontSum = 0;
-        for(var i = 0; i < package.length; i++){
-            fontSum += package[i].classes.length;
-        }
-        console.log(fontSum);
-        var r = parseInt(circle.getAttribute("r"));
-        interval_class = (2 * Math.PI) / (fontSum + package.length);
-        setText(circle, package, interval_class);
-        draw(package);
     });
 }
-function getPackage(str){
-    str = str.split(".");
-    return str[str.length-2];
-}
-function getClass(str){
-    str = str.split(".");
-    return str[str.length-1];
-}
-function hasPackage(arr, name){
+function setPath(path, arr){
+    var str = "M";
     for(var i = 0; i < arr.length; i++){
-        if(arr[i].name == name){
-            return i;
+        if(i == 0){
+            str += arr[i].x+","+arr[i].y;
+        }
+        else{
+            str += "L"+arr[i].x+","+arr[i].y;
         }
     }
-    arr.push({name:name, classes:[], texts:[], positions:[]});
-    return arr.length - 1;
+    path.setAttribute("d", str);
+    path.setAttribute("stroke", "blue");
+    path.setAttribute("fill", "none");
 }
-function setText(circle, package, interval_class){
-    var cx = parseInt(circle.getAttribute("cx"));
-    var cy = parseInt(circle.getAttribute("cy"));
-    var r = parseInt(circle.getAttribute("r"));
-    var currentPosition = {x:cx+r, y:cy, angle:0};
-    var base = "start";
-    for(var i = 0; i < package.length; i++){
-        for(var j = 0; j < package[i].classes.length; j++){
-            package[i].positions[j] = currentPosition;
-            currentPosition = getNextPosition({x:cx, y:cy}, currentPosition, interval_class, r);
-        }
-        currentPosition = getNextPosition({x:cx, y:cy}, currentPosition, interval_class, r);
-    }
-}
-function draw(package){
-    var base = "start";
-    for(var i = 0; i < package.length; i++){
-        for(var j = 0; j < package[i].classes.length; j++){
-            var currentPosition = package[i].positions[j];
-            package[i].texts[j].setAttribute("x", currentPosition.x);
-            package[i].texts[j].setAttribute("y", currentPosition.y);
-            var angle = currentPosition.angle;
-            if(angle <=0){
-                angle = 360 + angle;
-            }
-            if((angle < 90 && angle>=0) || (angle > 270 && angle < 0)) {
-                angle = 360 - angle;
-                base = "start";
-            }
-            else{
-                base = "end";
-                angle = 360 - angle + 180;
-            }
-            package[i].texts[j].setAttribute("text-anchor", base);
-            package[i].texts[j].setAttribute("transform","rotate("+angle+" "+currentPosition.x+" "+currentPosition.y+")");
-        }
-    }
-}
-function getNextPosition(fix, position, addAngle, r){
+function getNextPosition(fix, position, addAngle){
+    var r = Math.sqrt(Math.pow(position.x-fix.x,2)+Math.pow(position.y-fix.y,2));
     var currentAngle = Math.atan2(-position.y + fix.y, position.x - fix.x);
     var newAngle = currentAngle - addAngle;
     if(newAngle <= -Math.PI){
@@ -102,5 +57,185 @@ function getNextPosition(fix, position, addAngle, r){
     }
     var dx = r * Math.cos(newAngle);
     var dy = r * Math.sin(newAngle);
-    return {x:fix.x + dx, y:fix.y - dy, angle:(newAngle/(2*Math.PI))*360};
+    return {x:fix.x + dx, y:fix.y - dy};
+}
+function getPosition(center, r, angle){
+    var dx = r * Math.cos(angle);
+    var dy = r * Math.sin(angle);
+    return {x:center.x + dx, y:center.y - dy};
+}
+function getAngle(position1, position2){
+    return Math.atan2(-position2.y + position1.y, position2.x - position1.x);
+}
+function findNode(name, arr){
+    for(var i = 0; i < arr.length; i++){
+        if(arr[i].name == name){
+            return i;
+        }
+    }
+    var text = document.createElementNS("http://www.w3.org/2000/svg","text");
+    text.innerHTML = name;
+    arr.push({name:name, children:[], text:text, position:{x:0, y:0}});
+    return arr.length - 1;
+}
+function genTree(data){
+    var text = document.createElementNS("http://www.w3.org/2000/svg","text");
+    var tree = {name:"", children:[], parent:null, text:text, position:{x:0, y:0}};
+    var current = null;
+    var pre = null;
+    for(var i = 0; i < data.length; i++){
+        var arr = data[i].name.split(".");
+        if(i == 0){
+            tree.name = arr[0];
+            tree.text.innerHTML = tree.name;
+        }
+        current = tree;
+        for(var j = 1; j < arr.length; j++){
+            var id = findNode(arr[j], current.children);
+            pre = current;
+            current.children[id].parent = pre;
+            current = current.children[id];
+        }
+    }
+    return tree;
+    //console.log(tree);
+}
+function setPosition(node, id){
+    var svg = document.getElementsByTagName("svg")[0];
+    if(node.children.length == 0){
+        node.position = currentPosition;
+        svg.appendChild(node.text);
+        node.text.setAttribute("x", node.position.x);
+        node.text.setAttribute("y", node.position.y);
+        currentPosition = getNextPosition(centerPosition, currentPosition, interval);
+    }
+    else {
+        for (var i = 0; i < node.children.length; i++) {
+            setPosition(node.children[i], id + 1);
+        }
+        var angle = getAngle(centerPosition, node.children[0].position) + getAngle(centerPosition, node.children[node.children.length - 1].position);
+        angle /= 2;
+        var r = Math.sqrt(Math.pow(node.children[0].position.x-centerPosition.x,2)+Math.pow(node.children[0].position.y-centerPosition.y,2));
+        node.position = getPosition(centerPosition, r - (r/id), angle);
+        svg.appendChild(node.text);
+        node.text.setAttribute("x", node.position.x);
+        node.text.setAttribute("y", node.position.y);
+    }
+}
+function rotateText(node, id){
+    node.text.setAttribute("text-anchor", "middle");
+    node.text.setAttribute("dominant-baseline", "middle");
+    node.text.setAttribute("font-size", 12);
+    node.text.setAttribute("font-family", "Arial");
+    for(var i = 0; i < node.children.length; i++){
+        rotateText(node.children[i], id+1);
+    }
+    if(id > 1){
+        var angle = getAngle(centerPosition, node.position);
+        angle = (angle/(2*Math.PI)) * 360;
+        if(angle <=90 && angle >= -90){
+            node.text.setAttribute("text-anchor", "start");
+            angle = 360 - angle;
+        }
+        else{
+            node.text.setAttribute("text-anchor", "end");
+            angle = 180 - angle;
+        }
+        node.text.setAttribute("transform", "rotate(" + angle + "," + node.position.x + "," + node.position.y + ")");
+    }
+}
+function LCA(tree, str1, str2){
+    str1 = str1.split(".");
+    str2 = str2.split(".");
+    for(var i = 0; i < Math.min(str1.length, str2.length); i++){
+        if(str1[i] != str2[i]){
+            break;
+        }
+    }
+    var node = tree;
+    for(var j = 1; j < i; j++){
+        node = node.children[findNode(str1[j], node.children)];
+    }
+    var arr1 = [];
+    var arr2 = [];
+    var node1 = node;
+    var node2 = node;
+    for(var j  = i; j < str1.length; j++){
+        var id = findNode(str1[j], node1.children);
+        arr1.push(node1.children[id].position);
+        node1 = node1.children[id];
+    }
+    for(var j  = i; j < str2.length; j++){
+        var id = findNode(str2[j], node2.children);
+        arr2.push(node2.children[id].position);
+        node2 = node2.children[id];
+    }
+    arr1.reverse();
+    arr1.push(node.position);
+    var arr = arr1.concat(arr2);
+    return arr;
+}
+function fix(arr){
+    var n = arr.length;
+    for(var i = 0; i < n; i++){
+        arr[i].x = (beta*arr[i].x)+(1-beta)*(arr[0].x+(i/(n-1))*(arr[n-1].x-arr[0].x));
+        arr[i].y = (beta*arr[i].y)+(1-beta)*(arr[0].y+(i/(n-1))*(arr[n-1].y-arr[0].y));
+    }
+}
+function N(i, k, id, t){
+    if(k == 1){
+        if(id <=t[i+1] && id >=t[i]){
+            return 1;
+        }
+        else{
+            return 0;
+        }
+    }
+    else{
+        var a = (id - t[i])*N(i,k-1,id,t);
+        var b = (t[i+k-1]-t[i]);
+        var c = (t[i+k] - id)*N(i+1,k-1,id,t);
+        var d = (t[i+k]-t[i+1]);
+        if(b == 0){
+            b = 1;
+        }
+        if(d == 0){
+            d = 1;
+        }
+        return (a/b) + (c/d);
+    }
+}
+function genT(k, n){
+    var t = [];
+    for(var i = 0; i <=n+k; i++){
+        if(i < k){
+            t.push(0);
+        }
+        else if(i >=k && i <=n){
+            t.push(i-k+1);
+        }
+        else{
+            t.push(n-k+2);
+        }
+    }
+    var len = t[t.length-1] - t[0];
+    if(len != 0){
+        for(var i = 0; i < t.length; i++){
+            t[i] /= len;
+        }
+    }
+    return t;
+}
+function spline(q, id, k){
+    var n = q.length - 1;
+    var t = genT(k, n);
+    console.log(t);
+    var r = 0;
+    for(var i = 0; i <=n; i++){
+        r += (q[i].y*N(i,k,id,t));
+    }
+    return r;
+}
+function genLink(arr){
+
 }
