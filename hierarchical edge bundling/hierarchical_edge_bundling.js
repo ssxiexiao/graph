@@ -1,7 +1,7 @@
 var currentPosition = {};
 var centerPosition = {};
 var interval = 0;
-var beta = 0.99;
+var beta = 0.9;
 window.onload = function(){
     var w = 1000;
     var h = 1000;
@@ -175,16 +175,22 @@ function LCA(tree, str1, str2){
     var node2 = node;
     for(var j  = i; j < str1.length; j++){
         var id = findNode(str1[j], node1.children);
-        arr1.push(node1.children[id].position);
+        arr1.push({x:0,y:0});
+        arr1[arr1.length-1].x = node1.children[id].position.x;
+        arr1[arr1.length-1].y = node1.children[id].position.y;
         node1 = node1.children[id];
     }
     for(var j  = i; j < str2.length; j++){
         var id = findNode(str2[j], node2.children);
-        arr2.push(node2.children[id].position);
+        arr2.push({x:0,y:0});
+        arr2[arr2.length-1].x = node2.children[id].position.x;
+        arr2[arr2.length-1].y = node2.children[id].position.y;
         node2 = node2.children[id];
     }
     arr1.reverse();
-    arr1.push(node.position);
+    arr1.push({x:0,y:0});
+    arr1[arr1.length-1].x = node.position.x;
+    arr1[arr1.length-1].y = node.position.y;
     var arr = arr1.concat(arr2);
     return arr;
 }
