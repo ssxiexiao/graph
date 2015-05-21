@@ -1,7 +1,7 @@
 var currentPosition = {};
 var centerPosition = {};
 var interval = 0;
-var beta = 0.8;
+var beta = 0.99;
 window.onload = function(){
     var w = 1000;
     var h = 1000;
@@ -19,34 +19,24 @@ window.onload = function(){
     circle.setAttribute("fill", "white");
     svg.appendChild(circle);
     d3.json("flare-import.json", function(json){
-        interval = (2*Math.PI) / json.length;
         var tree = genTree(json);
+        console.log(getGroupNum(tree));
+        interval = (2*Math.PI) / (json.length + getGroupNum(tree));
         setPosition(tree, 1);
         rotateText(tree, 1);
         for(var i = 0; i < json.length; i++) {
             for (var j = 0; j < json[i].imports.length; j++) {
                 var _path = LCA(tree, json[i].name, json[i].imports[j]);
                 var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                fix(_path);
+                var str = drawLine(_path);
+                path.setAttribute("d",str);
+                path.setAttribute("fill", "none");
+                path.setAttribute("stroke", "#1f77b4");
+                path.setAttribute("stroke-opacity", 0.4);
                 svg.appendChild(path);
-                setPath(path, _path);
             }
         }
     });
-}
-function setPath(path, arr){
-    var str = "M";
-    for(var i = 0; i < arr.length; i++){
-        if(i == 0){
-            str += arr[i].x+","+arr[i].y;
-        }
-        else{
-            str += "L"+arr[i].x+","+arr[i].y;
-        }
-    }
-    path.setAttribute("d", str);
-    path.setAttribute("stroke", "blue");
-    path.setAttribute("fill", "none");
 }
 function getNextPosition(fix, position, addAngle){
     var r = Math.sqrt(Math.pow(position.x-fix.x,2)+Math.pow(position.y-fix.y,2));
@@ -78,6 +68,20 @@ function findNode(name, arr){
     arr.push({name:name, children:[], text:text, position:{x:0, y:0}});
     return arr.length - 1;
 }
+function getGroupNum(node){
+    var sum = 0;
+    var flag = false;
+    for(var i = 0; i < node.children.length; i++){
+        sum += getGroupNum(node.children[i]);
+        if(node.children[i].children.length == 0){
+            flag = true;
+        }
+    }
+    if(flag){
+        return sum + 1;
+    }
+    return sum;
+}
 function genTree(data){
     var text = document.createElementNS("http://www.w3.org/2000/svg","text");
     var tree = {name:"", children:[], parent:null, text:text, position:{x:0, y:0}};
@@ -100,6 +104,7 @@ function genTree(data){
     return tree;
     //console.log(tree);
 }
+var count = 0;
 function setPosition(node, id){
     var svg = document.getElementsByTagName("svg")[0];
     if(node.children.length == 0){
@@ -110,8 +115,16 @@ function setPosition(node, id){
         currentPosition = getNextPosition(centerPosition, currentPosition, interval);
     }
     else {
+        var flag = false;
         for (var i = 0; i < node.children.length; i++) {
+            if(node.children[i].children.length == 0){
+                flag = true;
+            }
             setPosition(node.children[i], id + 1);
+        }
+        if(flag == true){
+            count++;
+            currentPosition = getNextPosition(centerPosition, currentPosition, interval);
         }
         var angle = getAngle(centerPosition, node.children[0].position) + getAngle(centerPosition, node.children[node.children.length - 1].position);
         angle /= 2;
@@ -229,13 +242,37 @@ function genT(k, n){
 function spline(q, id, k){
     var n = q.length - 1;
     var t = genT(k, n);
-    console.log(t);
     var r = 0;
     for(var i = 0; i <=n; i++){
-        r += (q[i].y*N(i,k,id,t));
+        r += (q[i]*N(i,k,id,t));
     }
     return r;
 }
-function genLink(arr){
-
+function drawLine(q){
+    fix(q);
+    var qx = [];
+    var qy = [];
+    var list = [];
+    for(var i = 0; i < q.length; i++){
+        qx[i] = q[i].x;
+        qy[i] = q[i].y;
+    }
+    for(var i = 0; i <=1; i+=0.005){
+        var x = spline(qx, i, 3);
+        var y = spline(qy, i, 3);
+        list.push({x:x, y:y});
+    }
+    var x = spline(qx, 1, 3);
+    var y = spline(qy, 1, 3);
+    list.push({x:x, y:y});
+    var str = "M";
+    for(var i = 0 ; i < list.length; i++){
+        if(i == 0){
+            str += list[i].x + "," + list[i].y;
+        }
+        else{
+            str += "L" + list[i].x + "," + list[i].y;
+        }
+    }
+    return str;
 }
