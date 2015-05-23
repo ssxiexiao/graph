@@ -2,6 +2,10 @@ var currentPosition = {};
 var centerPosition = {};
 var interval = 0;
 var beta = 0.9;
+var tree = null;
+var data = null;
+var links = [];
+var paths = [];
 window.onload = function(){
     var w = 1000;
     var h = 1000;
@@ -11,31 +15,30 @@ window.onload = function(){
     centerPosition = {x:w/2, y:h/2};
     var svg = document.getElementsByTagName("svg")[0];
     svg.setAttribute("width", w);
-    svg.setAttribute("height", h)
+    svg.setAttribute("height", h);
     var circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
     circle.setAttribute("cx",w/2);
     circle.setAttribute("cy", h/2);
     circle.setAttribute("r", r);
     circle.setAttribute("fill", "white");
     svg.appendChild(circle);
+    document.getElementsByTagName("input")[0].onchange = onChange;
     d3.json("flare-import.json", function(json){
-        var tree = genTree(json);
-        console.log(getGroupNum(tree));
+        data = json;
+        tree = genTree(json);
         interval = (2*Math.PI) / (json.length + getGroupNum(tree));
         setPosition(tree, 1);
         rotateText(tree, 1);
         for(var i = 0; i < json.length; i++) {
             for (var j = 0; j < json[i].imports.length; j++) {
-                var _path = LCA(tree, json[i].name, json[i].imports[j]);
                 var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                var str = drawLine(_path);
-                path.setAttribute("d",str);
-                path.setAttribute("fill", "none");
-                path.setAttribute("stroke", "#1f77b4");
-                path.setAttribute("stroke-opacity", 0.4);
+                paths.push(path);
                 svg.appendChild(path);
+                var _path = LCA(tree, json[i].name, json[i].imports[j]);
+                links.push(_path);
             }
         }
+        draw(json);
     });
 }
 function getNextPosition(fix, position, addAngle){
@@ -148,7 +151,7 @@ function rotateText(node, id){
         angle = (angle/(2*Math.PI)) * 360;
         if(angle <=90 && angle >= -90){
             node.text.setAttribute("text-anchor", "start");
-            angle = 360 - angle;
+            angle = - angle;
         }
         else{
             node.text.setAttribute("text-anchor", "end");
@@ -196,10 +199,13 @@ function LCA(tree, str1, str2){
 }
 function fix(arr){
     var n = arr.length;
+    var newArr = [];
     for(var i = 0; i < n; i++){
-        arr[i].x = (beta*arr[i].x)+(1-beta)*(arr[0].x+(i/(n-1))*(arr[n-1].x-arr[0].x));
-        arr[i].y = (beta*arr[i].y)+(1-beta)*(arr[0].y+(i/(n-1))*(arr[n-1].y-arr[0].y));
+        newArr.push({x:0,y:0});
+        newArr[i].x = (beta*arr[i].x)+(1-beta)*(arr[0].x+(i/(n-1))*(arr[n-1].x-arr[0].x));
+        newArr[i].y = (beta*arr[i].y)+(1-beta)*(arr[0].y+(i/(n-1))*(arr[n-1].y-arr[0].y));
     }
+    return newArr;
 }
 function N(i, k, id, t){
     if(k == 1){
@@ -250,12 +256,13 @@ function spline(q, id, k){
     var t = genT(k, n);
     var r = 0;
     for(var i = 0; i <=n; i++){
+        //console.log(N(i,k,id,t));
         r += (q[i]*N(i,k,id,t));
     }
+    //console.log("----------");
     return r;
 }
 function drawLine(q){
-    fix(q);
     var qx = [];
     var qy = [];
     var list = [];
@@ -263,7 +270,7 @@ function drawLine(q){
         qx[i] = q[i].x;
         qy[i] = q[i].y;
     }
-    for(var i = 0; i <=1; i+=0.005){
+    for(var i = 0; i <=1; i+=0.02){
         var x = spline(qx, i, 3);
         var y = spline(qy, i, 3);
         list.push({x:x, y:y});
@@ -281,4 +288,25 @@ function drawLine(q){
         }
     }
     return str;
+}
+function draw(json){
+    beta = document.getElementsByTagName("input")[0].value;
+    beta /= 100;
+    var svg = document.getElementsByTagName("svg")[0];
+    var id = 0;
+    for(var i = 0; i < json.length; i++) {
+        for (var j = 0; j < json[i].imports.length; j++) {
+            var _path = fix(links[id]);
+            var path = paths[id];
+            var str = drawLine(_path);
+            path.setAttribute("d", str);
+            path.setAttribute("fill", "none");
+            path.setAttribute("stroke", "#1f77b4");
+            path.setAttribute("stroke-opacity", 0.4);
+            id++;
+        }
+    }
+}
+function onChange(){
+    draw(data);
 }
