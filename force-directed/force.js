@@ -27,7 +27,7 @@ function CalcDistance(location1, location2){
 }
 function CalMove(node){
     var move = 0;
-    var minMove = 2;
+    var minMove = 1;
     for(var i = 0; i < node.length; i++){
         var len = Math.sqrt(Math.pow(node[i].force[0], 2) + Math.pow(node[i].force[1], 2));
         move += len;
