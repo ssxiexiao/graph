@@ -82,8 +82,8 @@ function Iterate(nodelist, edge, len){
 }
 function getColor(){
     var r = Math.floor(Math.random()*155)+100;
-    var g = Math.floor(Math.random()*155)+100;
-    var b = Math.floor(Math.random()*155)+100;
+    var g = Math.floor(Math.random()*155)+0;
+    var b = Math.floor(Math.random()*155)+0;
     return "rgb("+r+","+g+","+b+")";
 }
 function genColor(n){
@@ -302,7 +302,7 @@ window.onload = function(){
             var newcircle = document.createElementNS("http://www.w3.org/2000/svg","circle");
             newcircle.setAttribute("r", r);
             newcircle.setAttribute("fill", node[j].color);
-            newcircle.setAttribute("fill-opacity", 0.5);
+            newcircle.setAttribute("class", "node");
             newcircle.onmousedown = down;
             newcircle.setAttribute("name", j);
             var g = document.createElementNS("http://www.w3.org/2000/svg","g");
