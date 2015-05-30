@@ -59,7 +59,7 @@ d3.csv("debt.csv", function(csv){
         var dy = r * Math.sin(newAngle);
         return {x:center.x + dx, y:center.y - dy};
     }
-    function drawArea(path, p1, p2, p3, p4, angle){
+    function drawArea(path, p1, p2, p3, p4, angle, text){
         var d = "M" + p1.x + "," + p1.y;
         var interval = (1/180)*Math.PI;
         var n = Math.floor(angle/interval);
@@ -82,6 +82,13 @@ d3.csv("debt.csv", function(csv){
         path.setAttribute("d", d);
         path.setAttribute("fill", "orange");
         path.setAttribute("stroke", "black");
+        path.setAttribute("fill-opacity", 0.4);
+
+        var pIn = getNextPosition(p1, angle/2);
+        var pOut = getNextPosition(p3, angle/2);
+        var pMiddle = {x:(pIn.x+pOut.x)/2, y:(pIn.y+pOut.y)/2};
+        text.setAttribute("x", pMiddle.x);
+        text.setAttribute("y", pMiddle.y);
     }
     function drawArea1(path, p1, p2, p4, angle){
         var d = "M" + p1.x + "," + p1.y;
@@ -101,7 +108,6 @@ d3.csv("debt.csv", function(csv){
         d += " Q" + center.x + "," + center.y + " " + p3.x + "," + p3.y;
         d += " L" + p4.x + "," + p4.y;
         d += " Q" + center.x + "," + center.y + " " + p1.x + "," + p1.y;
-        console.log(d);
         path.setAttribute("d", d);
         path.setAttribute("fill-opacity", 0.75);
         path.setAttribute("stroke-width", 0.75);
@@ -125,7 +131,13 @@ d3.csv("debt.csv", function(csv){
     var size = 0;
     for(var i = 0; i < creditor.length; i++){
         size += creditor[i].size;
+        var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.innerHTML = creditor[i].name;
+        text.setAttribute("text-anchor", "middle");
+        creditor[i].text = text;
+        svg.appendChild(text);
     }
+    console.log(creditor);
     for(var i = 0; i < creditor.length; i++){
         var addingAngle = minAngle + (creditor[i].size / size) * (totalAngle - padding - minAngle*creditor.length);
         var p2 = getNextPosition(p1, addingAngle);
@@ -164,7 +176,7 @@ d3.csv("debt.csv", function(csv){
         }
         _path.onmouseover = onMouseOver;
         _path.onmouseout = onMouseOut;
-        drawArea(_path, p1, p2, p3, p4, addingAngle);
+        drawArea(_path, p1, p2, p3, p4, addingAngle, creditor[i].text);
         svg.appendChild(_path);
         creditor[i].totalPath = _path;
         creditor[i].totalArea = {p1:p1, p2:p2, p3:p3, p4:p4};
@@ -188,6 +200,9 @@ d3.csv("debt.csv", function(csv){
             }
             else if(creditor[i].list[j].risk === "1"){
                 creditor[i].path[j].setAttribute("fill", "rgb(210,208,198)");
+            }
+            else if(creditor[i].list[j].risk === "2"){
+                creditor[i].path[j].setAttribute("fill", "rgb(200,240,201)");
             }
             else if(creditor[i].list[j].risk === "3"){
                 creditor[i].path[j].setAttribute("fill", "rgb(248,237,211)");

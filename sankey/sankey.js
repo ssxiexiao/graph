@@ -61,6 +61,15 @@ window.onload = function(){
             rect.onmousedown = down;
             json.nodes[i].rect = rect;
             svg.appendChild(rect);
+            var nameText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            nameText.innerHTML = json.nodes[i].name;
+            var numText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            numText.innerHTML = json.nodes[i].total;
+            numText.setAttribute("text-anchor", "middle");
+            json.nodes[i].nameText = nameText;
+            json.nodes[i].numText = numText;
+            svg.appendChild(nameText);
+            svg.appendChild(numText);
         }
         for(var i = 0; i < json.links.length; i++){
             var path = document.createElementNS("http://www.w3.org/2000/svg","path");
@@ -74,6 +83,9 @@ window.onload = function(){
         function display(){
             for(var i = 0; i < json.links.length; i++){
                 drawPath(json.links[i], json.nodes);
+            }
+            for(var i = 0; i < json.nodes.length; i++){
+                drawText(json.nodes[i]);
             }
         }
         function down(e){
@@ -136,6 +148,15 @@ window.onload = function(){
         node.rect.setAttribute("y", node.h);
         node.rect.setAttribute("width", rectW);
         node.rect.setAttribute("height", node.total*hFactor);
+    }
+    function drawText(node){
+        var y = parseFloat(node.rect.getAttribute("y")) + (node.total/2)*hFactor;
+        var xNum = parseFloat(node.rect.getAttribute("x")) + (parseFloat(node.rect.getAttribute("width"))/2);
+        node.numText.setAttribute("x", xNum);
+        node.numText.setAttribute("y", y);
+        var xName = parseFloat(node.rect.getAttribute("x")) + parseFloat(node.rect.getAttribute("width"));
+        node.nameText.setAttribute("x", xName);
+        node.nameText.setAttribute("y", y);
     }
     function getColor(){
         var r = Math.floor(Math.random()*255)+0;
