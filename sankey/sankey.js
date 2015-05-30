@@ -137,8 +137,14 @@ window.onload = function(){
             y3 = y1+v*hFactor;
         var x4 = x2,
             y4 = y2+v*hFactor;
-        var xLen = Math.abs((x1-x2)/2);
-        var d = "M"+x1+" "+y1+"C"+(x1+xLen)+" "+y1+" "+(x2-xLen)+" "+y2+" "+x2+" "+y2+"L"+x4+" "+y4+"C"+(x4-xLen)+" "+y4+" "+(x3+xLen)+" "+y3+" "+x3+" "+y3+"L"+x1+" "+y1;
+        var xLen = Math.abs(x1-x2)/2;
+        var yLen = v*hFactor/2;
+        if(x1 < x2) {
+            var d = "M" + x1 + " " + y1 + "C" + (x1 + xLen) + " " + y1 + " " + (x2 - xLen) + " " + y2 + " " + x2 + " " + y2 + "L" + x4 + " " + y4 + "C" + (x4 - xLen) + " " + y4 + " " + (x3 + xLen) + " " + y3 + " " + x3 + " " + y3 + "L" + x1 + " " + y1;
+        }
+        else{
+
+        }
         link.path.setAttribute("d", d);
         link.path.setAttribute("fill", nodes[s].rect.getAttribute("fill"));
         link.path.setAttribute("fill-opacity", 0.5);
