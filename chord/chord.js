@@ -38,6 +38,36 @@ d3.csv("debt.csv", function(csv){
             }
         }
     }
+    function getDebtor(){
+        var country = getCountry();
+        var creditor = [];
+        var newCsv = csv.concat();
+        for(var i = 0; i < newCsv.length; i++){
+            var j = newCsv[i].creditor;
+            newCsv[i].creditor = newCsv[i].debtor;
+            newCsv[i].debtor = j;
+        }
+        console.log(newCsv);
+        for(var i = 0; i < country.length; i++){
+            creditor.push({name:country[i], list:[], size:0});
+        }
+        for(var i = 0; i < newCsv.length; i++){
+            insert(newCsv[i]);
+        }
+        creditor.sort(function(a, b){ return b.size - a.size; });
+        for(var i = 0; i < creditor.length; i++){
+            creditor[i].list.sort(function(a, b){ return parseFloat(b.amount)- parseFloat(a.amount); });
+        }
+        return creditor;
+        function insert(l){
+            for(var i = 0; i < creditor.length; i++){
+                if(creditor[i].name === l.creditor){
+                    creditor[i].list.push(l);
+                    creditor[i].size += parseFloat(l.amount);
+                }
+            }
+        }
+    }
     function getDict(arr){
         var dict = {};
         for(var i = 0; i < arr.length; i++){
@@ -49,36 +79,12 @@ d3.csv("debt.csv", function(csv){
         var r = Math.sqrt(Math.pow(cur.x-center.x, 2)+Math.pow(cur.y-center.y, 2));
         var curAngle = Math.atan2(-cur.y + center.y, cur.x - center.x);
         var newAngle = curAngle - angle;
-        if(newAngle <= -Math.PI){
-            newAngle += (2*Math.PI);
-        }
-        else if(newAngle > Math.PI){
-            newAngle -= Math.PI;
-        }
         var dx = r * Math.cos(newAngle);
         var dy = r * Math.sin(newAngle);
         return {x:center.x + dx, y:center.y - dy};
     }
     function drawArea(path, p1, p2, p3, p4, angle, text){
-        var d = "M" + p1.x + "," + p1.y;
-        var interval = (1/180)*Math.PI;
-        var n = Math.floor(angle/interval);
-        var p = {x:p1.x, y:p1.y};
-        for(var i = 0; i < n; p=getNextPosition(p, interval), i++){
-            if(i === 0){
-                //d += p.x + "," + p.y;
-            }
-            else{
-                d += "L" + p.x + "," + p.y;
-            }
-        }
-        d += "L" + p2.x + "," + p2.y;
-        p = {x:p4.x, y:p4.y};
-        for(var i = 0; i < n; p=getNextPosition(p, -interval), i++){
-            d += "L" + p.x + "," + p.y;
-        }
-        d += "L" + p3.x + "," + p3.y;
-        d += "L" + p1.x + "," + p1.y;
+        var d = "M"+p1.x+" "+p1.y+"A"+r1+" "+r1+" "+0+" "+0+" "+1+" "+p2.x+" "+p2.y+"L"+p4.x+" "+p4.y+"A"+r2+" "+r2+" "+0+" "+0+" "+0+" "+p3.x+" "+p3.y+"L"+p1.x+" "+p1.y;
         path.setAttribute("d", d);
         path.setAttribute("fill", "orange");
         path.setAttribute("stroke", "black");
@@ -91,22 +97,11 @@ d3.csv("debt.csv", function(csv){
         text.setAttribute("y", pMiddle.y);
     }
     function drawArea1(path, p1, p2, p4, angle){
-        var d = "M" + p1.x + "," + p1.y;
+        var d ="M"+p1.x+" "+p1.y+"A"+r1+" "+r1+" "+0+" "+0+" "+1+" "+p2.x+" "+p2.y;
         var interval = (1/180)*Math.PI;
         var p3 = getNextPosition(p4, -interval);
-        var n = Math.floor(angle/interval);
-        var p = {x:p1.x, y:p1.y};
-        for(var i = 0; i < n; p=getNextPosition(p, interval), i++){
-            if(i === 0){
-                //d += p.x + "," + p.y;
-            }
-            else{
-                d += " L" + p.x + "," + p.y;
-            }
-        }
-        d += " L" + p2.x + "," + p2.y;
         d += " Q" + center.x + "," + center.y + " " + p3.x + "," + p3.y;
-        d += " L" + p4.x + "," + p4.y;
+        d += "L"+p4.x+" "+p4.y;
         d += " Q" + center.x + "," + center.y + " " + p1.x + "," + p1.y;
         path.setAttribute("d", d);
         path.setAttribute("fill-opacity", 0.75);
@@ -116,8 +111,14 @@ d3.csv("debt.csv", function(csv){
     var h = 800;
     var r1 = 300;
     var r2 = 350;
+    var flag = false;
     var center = {x:w/2, y:h/2};
-    var creditor = getCreditor();
+    if(flag) {
+        var creditor = getCreditor();
+    }
+    else {
+        var creditor = getDebtor();
+    }
     var dict = getDict(creditor);
     var padding = (50/180)*Math.PI;
     var minAngle = (2/180)*Math.PI;
@@ -138,6 +139,7 @@ d3.csv("debt.csv", function(csv){
         svg.appendChild(text);
     }
     console.log(creditor);
+    console.log(dict);
     for(var i = 0; i < creditor.length; i++){
         var addingAngle = minAngle + (creditor[i].size / size) * (totalAngle - padding - minAngle*creditor.length);
         var p2 = getNextPosition(p1, addingAngle);

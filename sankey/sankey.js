@@ -138,12 +138,12 @@ window.onload = function(){
         var x4 = x2,
             y4 = y2+v*hFactor;
         var xLen = Math.abs(x1-x2)/2;
-        var yLen = v*hFactor/2;
+        var yLen = v*hFactor;
         if(x1 < x2) {
             var d = "M" + x1 + " " + y1 + "C" + (x1 + xLen) + " " + y1 + " " + (x2 - xLen) + " " + y2 + " " + x2 + " " + y2 + "L" + x4 + " " + y4 + "C" + (x4 - xLen) + " " + y4 + " " + (x3 + xLen) + " " + y3 + " " + x3 + " " + y3 + "L" + x1 + " " + y1;
         }
         else{
-
+            var d = "M"+x1+" "+y1+"A"+yLen+" "+yLen+" "+0+" "+1+" "+1+" "+x2+" "+y2+"L"+x4+" "+y4+"A"+xLen+" "+xLen+" "+0+" "+1+" "+0+" "+x3+" "+y3+"L"+x1+" "+y1;
         }
         link.path.setAttribute("d", d);
         link.path.setAttribute("fill", nodes[s].rect.getAttribute("fill"));
