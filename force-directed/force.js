@@ -298,6 +298,13 @@ window.onload = function(){
             newnode.color = color[parseInt(json.nodes[i].group)];
             node.push(newnode);
         }
+        for(var j = 0; j < json.links.length; j++){
+            var newline = document.createElementNS("http://www.w3.org/2000/svg","line");
+            newline.setAttribute("stroke", "gray");
+            newline.setAttribute("stroke-width", 1);
+            newline.setAttribute("stroke-opacity", 0.3);
+            svg.appendChild(newline);
+        }
         for(var j = 0; j < node.length; j++){
             var newcircle = document.createElementNS("http://www.w3.org/2000/svg","circle");
             newcircle.setAttribute("r", r);
@@ -317,14 +324,6 @@ window.onload = function(){
             svg.appendChild(clipPath);
             svg.appendChild(g);
         }
-        for(var j = 0; j < json.links.length; j++){
-            var newline = document.createElementNS("http://www.w3.org/2000/svg","line");
-            newline.setAttribute("stroke", "gray");
-            newline.setAttribute("stroke-width", 1);
-            newline.setAttribute("stroke-opacity", 0.3);
-            svg.appendChild(newline);
-        }
-
         RandomInitial(node, w, h, padding);
         setInterval(function(){
             display(node, json.links);

@@ -47,7 +47,6 @@ d3.csv("debt.csv", function(csv){
             newCsv[i].creditor = newCsv[i].debtor;
             newCsv[i].debtor = j;
         }
-        console.log(newCsv);
         for(var i = 0; i < country.length; i++){
             creditor.push({name:country[i], list:[], size:0});
         }
@@ -120,7 +119,7 @@ d3.csv("debt.csv", function(csv){
         var creditor = getDebtor();
     }
     var dict = getDict(creditor);
-    var padding = (50/180)*Math.PI;
+    var padding = (80/180)*Math.PI;
     var minAngle = (2/180)*Math.PI;
     var totalAngle = 2*Math.PI;
     var interval = padding / creditor.length;
@@ -135,11 +134,11 @@ d3.csv("debt.csv", function(csv){
         var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.innerHTML = creditor[i].name;
         text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("font-family", "Arial");
         creditor[i].text = text;
         svg.appendChild(text);
     }
-    console.log(creditor);
-    console.log(dict);
     for(var i = 0; i < creditor.length; i++){
         var addingAngle = minAngle + (creditor[i].size / size) * (totalAngle - padding - minAngle*creditor.length);
         var p2 = getNextPosition(p1, addingAngle);
