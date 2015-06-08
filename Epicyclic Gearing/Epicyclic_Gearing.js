@@ -17,15 +17,11 @@ var Gearing = {
     a: 10,
     b: 10,
     rr:13,
-    createNew: function(x, y, r) {
+    createNew: function(x, y, num) {
         var gearing = {};
         gearing.x = x;
         gearing.y = y;
-        var u = Math.floor(2*Math.PI*r/Gearing.b);
-        if(u % 2 == 1){
-            u+=1;
-        }
-        gearing.r = u*Gearing.b/(2*Math.PI);
+        gearing.r = (num*2*Gearing.b)/(2*Math.PI);
         gearing.path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         gearing.g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         gearing.g.appendChild(gearing.path);
@@ -41,9 +37,9 @@ var Gearing = {
         gearing.getCenter = function(){
             return {x:gearing.x, y:gearing.y};
         };
-        initial();
+        initial(num);
         return gearing;
-        function initial(){
+        function initial(num){
             var p = {x:gearing.x, y:gearing.y-gearing.r};
             var q = {x:gearing.x, y:gearing.y-gearing.r-(Gearing.a/2)};
             var z = {x:gearing.x, y:gearing.y-gearing.r-Gearing.a};
@@ -51,13 +47,14 @@ var Gearing = {
             var interval = Len2Angle(gearing.r, Gearing.b);
             var d = "M";
             var count = 0;
-            for(var i = 0; i < 2*Math.PI; i+=interval){
-                var p1 = getNextPosition(p, center, i);
-                var p2 = getNextPosition(p, center, i+interval);
-                var q1 = getNextPosition(q, center, i);
-                var q2 = getNextPosition(q, center, i+interval);
-                var z1 = getNextPosition(z, center, i+(interval/4));
-                var z2 = getNextPosition(z, center, i+(interval*3/4));
+            for(var i = 0; i < 2*num; i+=1){
+                var u = i*interval;
+                var p1 = getNextPosition(p, center, u);
+                var p2 = getNextPosition(p, center, u+interval);
+                var q1 = getNextPosition(q, center, u);
+                var q2 = getNextPosition(q, center, u+interval);
+                var z1 = getNextPosition(z, center, u+(interval/4));
+                var z2 = getNextPosition(z, center, u+(interval*3/4));
                 if(count % 2 == 0){
                     if(i != 0) {
                         d += "L";
@@ -92,15 +89,11 @@ var Ring = {
     rr: 10,
     a: 10,
     b: 10,
-    createNew: function(x, y, r) {
+    createNew: function(x, y, num) {
         var ring = {};
         ring.x = x;
         ring.y = y;
-        var u = Math.floor(2 * Math.PI * r / Ring.b);
-        if (u % 2 == 1) {
-            u += 1;
-        }
-        ring.r = u * Ring.b / (2 * Math.PI);
+        ring.r = (num*2*Ring.b)/(2*Math.PI);
         ring.path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         ring.g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         ring.g.appendChild(ring.path);
@@ -116,9 +109,9 @@ var Ring = {
         ring.getCenter = function () {
             return {x: ring.x, y: ring.y};
         };
-        initial();
+        initial(num);
         return ring;
-        function initial() {
+        function initial(num) {
             var p = {x: ring.x, y: ring.y - ring.r};
             var q = {x: ring.x, y: ring.y - ring.r + (Ring.a / 2)};
             var z = {x: ring.x, y: ring.y - ring.r + Ring.a};
@@ -126,18 +119,23 @@ var Ring = {
             var interval = Len2Angle(ring.r, Ring.b);
             var d = "M";
             var count = 0;
-            for (var i = 0; i < 2 * Math.PI; i += interval) {
-                var p1 = getNextPosition(p, center, i);
-                var p2 = getNextPosition(p, center, i + interval);
-                var q1 = getNextPosition(q, center, i);
-                var q2 = getNextPosition(q, center, i + interval);
-                var z1 = getNextPosition(z, center, i + (interval / 4));
-                var z2 = getNextPosition(z, center, i + (interval * 3 / 4));
+            for (var i = 0; i < (2 * num); i += 1) {
+                var p1 = getNextPosition(p, center, i*interval);
+                var p2 = getNextPosition(p, center, i*interval + interval);
+                var q1 = getNextPosition(q, center, i*interval);
+                var q2 = getNextPosition(q, center, i*interval + interval);
+                var z1 = getNextPosition(z, center, i*interval + (interval / 4));
+                var z2 = getNextPosition(z, center, i*interval + (interval * 3 / 4));
                 if (count % 2 == 1) {
                     if (i != 0) {
                         d += "L";
                     }
-                    d += p1.x + " " + p1.y + "L" + q1.x + " " + q1.y + "L" + z1.x + " " + z1.y + "L" + z2.x + " " + z2.y + "L" + q2.x + " " + q2.y + "L" + p2.x + " " + p2.y;
+                    if(i == 2*num - 1){
+                        d += p1.x + " " + p1.y + "L" + q1.x + " " + q1.y + "L" + z1.x + " " + z1.y + "L" + z2.x + " " + z2.y + "L" + q2.x + " " + q2.y + "L" + p.x + " " + p.y;
+                    }
+                    else {
+                        d += p1.x + " " + p1.y + "L" + q1.x + " " + q1.y + "L" + z1.x + " " + z1.y + "L" + z2.x + " " + z2.y + "L" + q2.x + " " + q2.y + "L" + p2.x + " " + p2.y;
+                    }
                 }
                 else {
                     if (i != 0) {
@@ -171,16 +169,17 @@ window.onload = function() {
     var svg = document.getElementsByTagName("svg")[0];
     svg.setAttribute("width", w);
     svg.setAttribute("height", h);
-    var r1 = 80,
-        r2 = 100;
+    var r1 = 16,
+        r2 = 32,
+        r3 = 88;
     var x = 400,
-        y = 350,
-        padding = (r1+r2+Gearing.a);
+        y = 350;
+    var _gearing = Gearing.createNew(0,0,r2);
     var gearing = Gearing.createNew(x, y, r1);
-    var gearing1 = Gearing.createNew(x-padding, y-Gearing.a, r2);
-    var gearing2 = Gearing.createNew(x+padding, y-Gearing.a, r2);
-    var gearing3 = Gearing.createNew(x+Gearing.a, y+padding, r2);
-    var ring = Ring.createNew(x, y, r1+2*r2+2*Gearing.a);
+    var gearing1 = Gearing.createNew(x-gearing.r-_gearing.r-Gearing.a, y, r2);
+    var gearing2 = Gearing.createNew(x+gearing.r+_gearing.r+Gearing.a, y, r2);
+    var gearing3 = Gearing.createNew(x, y+gearing.r+_gearing.r+Gearing.a, r2);
+    var ring = Ring.createNew(x, y, r3);
     var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.appendChild(gearing.g);
     g.appendChild(gearing1.g);
@@ -189,7 +188,7 @@ window.onload = function() {
     g.appendChild(ring.g);
     svg.appendChild(g);
     var len = 0;
-    var mode = 1;
+    var mode = 2;
     if(mode == 0) {
         setInterval(function () {
             g.setAttribute("transform", "rotate(" + (len / ring.r) + "," + gearing.getCenter().x + "," + gearing.getCenter().y + ")");
