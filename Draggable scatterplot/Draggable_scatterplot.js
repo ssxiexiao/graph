@@ -12,7 +12,7 @@ var Coordinate = {
         coordinate.rect.setAttribute('x', coordinate.x);
         coordinate.rect.setAttribute('y', coordinate.y);
         coordinate.rect.setAttribute('fill', 'none');
-        coordinate.rect.setAttribute('stroke', 'black');
+        //coordinate.rect.setAttribute('stroke', 'black');
         coordinate.g.appendChild(coordinate.rect);
         coordinate.points = {};
         coordinate.xRange = function(min, max){
@@ -52,24 +52,52 @@ var Coordinate = {
                 point.setAttribute('r', r);
                 point.setAttribute('fill', color[dict[obj.region]]);
                 point.setAttribute('stroke', 'black');
+                point.setAttribute('name', obj.name);
+                onmousemove(point, coordinate.points);
+                onmouseout(point, coordinate.points);
             }
         };
         return coordinate;
     }
 };
+function onmousemove(point, arr){
+    point.onmousemove = function(){
+        var normal = 0.2, highlight = 1;
+        nameText.innerHTML = point.getAttribute('name');
+        for(var i in arr){
+            arr[i].setAttribute('fill-opacity', normal);
+        }
+        point.setAttribute('fill-opacity', highlight);
+    }
+}
+function onmouseout(point, arr){
+    point.onmouseout = function(){
+        var normal = 1;
+        //nameText.innerHTML = '';
+        for(var i in arr){
+            arr[i].setAttribute('fill-opacity', normal);
+        }
+    }
+}
 var axes = {x:'income', y:'lifeExpectancy', z:'population'};
+var yearText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+var nameText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+yearText.setAttribute('font-size', 100);
+yearText.setAttribute('font-family', 'Arial');
+yearText.setAttribute('fill', '#ddd');
+nameText.setAttribute('font-size', 100);
+nameText.setAttribute('font-family', 'Arial');
+nameText.setAttribute('fill', '#ddd');
 window.onload = function(){
     var w = 1000,
         h = 750;
     var svg = document.getElementsByTagName('svg')[0];
     svg.setAttribute('width', w);
     svg.setAttribute('height', h);
+    svg.appendChild(yearText);
+    svg.appendChild(nameText);
     var rMin = 2,
         rMax = 60;
-    var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute('font-size', 100);
-    text.setAttribute('font-family', 'Ariel');
-    svg.appendChild(text);
     d3.json('nations.json', function(json){
         var data = preProcess(json);
         var range = data.range,
@@ -80,15 +108,16 @@ window.onload = function(){
             dict[region[i]] = i;
         }
         var coordinate = Coordinate.createNew(0, 200, 900, 500);
-        text.setAttribute('x', coordinate.x+coordinate.width-200);
-        text.setAttribute('y', coordinate.y+coordinate.height);
-        var year = parseInt(document.getElementsByTagName("input")[0].value);
+        yearText.setAttribute('x', coordinate.x+coordinate.width-200);
+        yearText.setAttribute('y', coordinate.y+coordinate.height);
+        nameText.setAttribute('x', coordinate.x);
+        nameText.setAttribute('y', coordinate.y);
         setInterval(function(){
             var year = parseInt(document.getElementsByTagName("input")[0].value);
             draw(year);
         }, 10);
         function draw(year){
-            text.innerHTML = year;
+            yearText.innerHTML = year;
             var list = [];
             coordinate.xRange(range.x.min, range.x.max);
             coordinate.yRange(range.y.min, range.y.max);
@@ -116,7 +145,6 @@ window.onload = function(){
             for(var i in coordinate.points){
                 count++;
             }
-            console.log(count);
         }
     });
 }

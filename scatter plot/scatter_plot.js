@@ -180,6 +180,30 @@ window.onload = function(){
             }
             rect.setAttribute('width', Math.abs(_w));
             rect.setAttribute('height', Math.abs(_h));
+            var highlight = 1;
+            var normal = 0.2;
+            var list = [];
+            var xMin = parseFloat(rect.getAttribute('x')),
+                yMin = parseFloat(rect.getAttribute('y')),
+                xMax = xMin+parseFloat(rect.getAttribute('width')),
+                yMax = yMin+parseFloat(rect.getAttribute('height'));
+            if(obj) {
+                for (var i = 0; i < obj.points.length; i++) {
+                    var x = parseFloat(obj.points[i].getAttribute('cx')),
+                        y = parseFloat(obj.points[i].getAttribute('cy'));
+                    if ((x <= xMax) && (x >= xMin) && (y <= yMax) && (y >= yMin)) {
+                        list.push(i);
+                    }
+                }
+            }
+            for(var i = 0; i < cells.length; i++){
+                for(var j = 0; j < cells[i].points.length; j++){
+                    cells[i].points[j].setAttribute("fill-opacity", normal);
+                }
+                for(var j = 0; j < list.length; j++){
+                    cells[i].points[list[j]].setAttribute("fill-opacity", highlight);
+                }
+            }
         }
     }
     function mouseUp(){
@@ -208,7 +232,6 @@ window.onload = function(){
                 cells[i].points[list[j]].setAttribute("fill-opacity", highlight);
             }
         }
-        console.log(list);
         //rect.style.visibility = "hidden";
     }
 }
