@@ -188,7 +188,7 @@ window.onload = function() {
     g.appendChild(ring.g);
     svg.appendChild(g);
     var len = 0;
-    var mode = 2;
+    var mode = 0;
     if(mode == 0) {
         setInterval(function () {
             g.setAttribute("transform", "rotate(" + (len / ring.r) + "," + gearing.getCenter().x + "," + gearing.getCenter().y + ")");

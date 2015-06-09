@@ -39,7 +39,9 @@ var Cell = {
       cell.rect.setAttribute("x", x);
       cell.rect.setAttribute("y", y);
       cell.rect.setAttribute("stroke", "black");
-      cell.rect.setAttribute("fill", "none");
+      cell.rect.setAttribute("fill", "white");
+      cell.rect.setAttribute("fill-opacity", 0);
+      cell.points = [];
       cell.addPoint = function(range, value, color){
           var r = 3;
           var w = parseFloat(cell.rect.getAttribute("width")),
@@ -55,19 +57,62 @@ var Cell = {
           circle.setAttribute("cx", x1);
           circle.setAttribute("cy", y1);
           circle.setAttribute("fill", color);
-          circle.setAttribute("fill-opacity", 0.5);
+          circle.setAttribute("fill-opacity", 0.2);
           cell.g.appendChild(circle);
+          cell.points.push(circle);
           return circle;
       }
       return cell;
   }
 };
+function setOnMouseDown(cell){
+    cell.rect.onmousedown = function (){
+        console.log(cell);
+        var targ;
+        if (!e){
+            var e = window.event;
+        }
+        if (e.target){
+            targ = e.target;
+        }
+        else if (e.srcElement){
+            targ = e.srcElement;
+        }
+        if (targ.nodeType == 3){ // defeat Safari bug
+            targ = targ.parentNode;
+        }
+        dragging = true;
+        obj = cell;
+        mouseX = parseFloat(e.clientX);
+        mouseY = parseFloat(e.clientY);
+        rect.style.visibility = "visible";
+        rect.setAttribute("x", mouseX);
+        rect.setAttribute("y", mouseY);
+        rect.setAttribute("width", 0);
+        rect.setAttribute("height", 0);
+    };
+}
+var rect;
+var dragging;
+var obj;
+var cells;
 window.onload = function(){
     var w = 1000,
         h = 1000;
     var svg = document.getElementsByTagName('svg')[0];
     svg.setAttribute("width", w);
     svg.setAttribute("height", h);
+    rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    dragging = false;
+    obj = null;
+    cells = [];
+    rect.setAttribute('stroke', 'black');
+    rect.setAttribute("fill", "none");
+    rect.setAttribute("fill-opacity", 0.3);
+    svg.appendChild(rect);
+    rect.style.visibility = "hidden";
+    document.onmouseup = mouseUp;
+    document.onmousemove = mouseMove;
     d3.csv("iris.csv", function(csv){
         var len = 130;
         var interval = 150;
@@ -79,6 +124,8 @@ window.onload = function(){
         for(var j in range.max){
             for(var k in range.max){
                 var cell = Cell.createNew(len, startX+(interval*countX), startY+(interval*countY));
+                cell.g.setAttribute('id', countX+(countY*4));
+                setOnMouseDown(cell);
                 var x = k;
                 var y = j;
                 for(var i = 0; i < csv.length; i++) {
@@ -87,6 +134,7 @@ window.onload = function(){
                         y: {max: range.max[y], min: range.min[y]}
                     }, {x: csv[i][x], y: csv[i][y]}, Node[csv[i]["species"]]);
                 }
+                cells.push(cell);
                 svg.appendChild(cell.g);
                 countX++;
             }
@@ -94,6 +142,75 @@ window.onload = function(){
             countY++;
         }
     });
+    function mouseMove(e){
+        if (!e){
+            var e = window.event;
+        }
+        if(dragging == true){
+            var _w, _h,
+                objX = parseFloat(obj.rect.getAttribute('x')),
+                objY = parseFloat(obj.rect.getAttribute('y')),
+                objW = parseFloat(obj.rect.getAttribute('width')),
+                objH = parseFloat(obj.rect.getAttribute('height'));
+            _h = e.clientY - mouseY;
+            _w = e.clientX - mouseX;
+            if(_w < 0 && e.clientX < objX){
+                _w = objX - mouseX;
+            }
+            else if(_w > 0 && e.clientX > objX+objW){
+                _w = objX+objW-mouseX;
+            }
+            if(_h < 0 && e.clientY < objY){
+                _h = objY - mouseY;
+            }
+            else if(_h > 0 && e.clientY > objY+objH){
+                _h = objY+objH-mouseY;
+            }
+            if(_w < 0){
+                rect.setAttribute('x', _w+mouseX);
+            }
+            else{
+                rect.setAttribute('x', mouseX);
+            }
+            if(_h < 0){
+                rect.setAttribute('y', _h+mouseY);
+            }
+            else{
+                rect.setAttribute('y', mouseY);
+            }
+            rect.setAttribute('width', Math.abs(_w));
+            rect.setAttribute('height', Math.abs(_h));
+        }
+    }
+    function mouseUp(){
+        var highlight = 1;
+        var normal = 0.2;
+        dragging = false;
+        var list = [];
+        var xMin = parseFloat(rect.getAttribute('x')),
+            yMin = parseFloat(rect.getAttribute('y')),
+            xMax = xMin+parseFloat(rect.getAttribute('width')),
+            yMax = yMin+parseFloat(rect.getAttribute('height'));
+        if(obj) {
+            for (var i = 0; i < obj.points.length; i++) {
+                var x = parseFloat(obj.points[i].getAttribute('cx')),
+                    y = parseFloat(obj.points[i].getAttribute('cy'));
+                if ((x <= xMax) && (x >= xMin) && (y <= yMax) && (y >= yMin)) {
+                    list.push(i);
+                }
+            }
+        }
+        for(var i = 0; i < cells.length; i++){
+            for(var j = 0; j < cells[i].points.length; j++){
+                cells[i].points[j].setAttribute("fill-opacity", normal);
+            }
+            for(var j = 0; j < list.length; j++){
+                cells[i].points[list[j]].setAttribute("fill-opacity", highlight);
+            }
+        }
+        console.log(list);
+        //rect.style.visibility = "hidden";
+    }
 }
 function getRange(data){
     var max = {},
