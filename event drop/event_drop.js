@@ -29,7 +29,7 @@ var Scale = {
         }
         scale.scale = function(value){
             var p = (value-scale.xMin)/(scale.xMax - scale.xMin);
-            return p*(scale.yMax-scale.yMin) + scale.yMin;
+            return (p*(scale.yMax-scale.yMin)) + scale.yMin;
         }
         return scale;
     }
@@ -42,11 +42,16 @@ var Series = {
         var series = {};
         series.y = 1;
         series.g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        series.color = getColor();
         var _data = [];
         var _fullData = [];
         var _scale;
         series.setScale = function(scale){
             _scale = scale;
+            return series;
+        }
+        series.resetScaleDomain = function(min, max){
+            _scale.domain(min, max);
             return series;
         }
         series.data = function(data){
@@ -67,7 +72,7 @@ var Series = {
             for(var i = 0; i < _data.length; i++){
                 var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 var time = _fullData[_data[i]].value;
-                circle.setAttribute('fill', color);
+                circle.setAttribute('fill', series.color);
                 circle.setAttribute('cx', _scale.scale(time));
                 circle.setAttribute('cy', series.y);
                 circle.setAttribute('r', r);
@@ -88,12 +93,30 @@ var Series = {
                         break;
                     }
                 }
-                if(!count){
+                if(count == 0){
                     _data.push(i);
                 }
             }
             return series;
         }
+        series.getMax = function(){
+            if(_data.length){
+                var max = _fullData[_data[0]].value;
+                for(var i = 1; i < _data.length; i++){
+                    max = Math.max(_fullData[_data[i]].value, max);
+                }
+                return max;
+            }
+        };
+        series.getMin = function(){
+            if(_data.length){
+                var min = _fullData[_data[0]].value;
+                for(var i = 1; i < _data.length; i++){
+                    min = Math.min(_fullData[_data[i]].value, min);
+                }
+                return min;
+            }
+        };
         Series.arr.push(series);
         return series;
     }
@@ -102,7 +125,6 @@ function onClick(Series, circle, time){
     circle.onclick = function(){
         Series.count++;
         Series.count%=4;
-        console.log(Series.count);
         var date = new Date(time);
         if(Series.count == 0){
             var func = [];
@@ -122,7 +144,19 @@ function onClick(Series, circle, time){
         }
         for(var i = 0; i < Series.arr.length; i++){
             var series = Series.arr[i];
-            series.filter(func, value).bindData();
+            series.filter(func, value);
+            if(i == 0){
+                var max = series.getMax();
+                var min = series.getMin();
+            }
+            else{
+                max = Math.max(series.getMax(), max);
+                min = Math.min(series.getMin(), min);
+            }
+        }
+        for(var i = 0; i < Series.arr.length; i++){
+            var series = Series.arr[i];
+            series.resetScaleDomain(min, max).bindData();
         }
     }
 }
@@ -150,7 +184,6 @@ window.onload = function(){
             _data.push({value:data[i].dates[j].getTime()});
         }
         var scale = Scale.createNew().domain(_range.min, _range.max).range(x+10, x+10+len);
-        console.log(scale);
         var series = Series.createNew().data(_data).setScale(scale).setAttribute('y', y+i*interval).filter([]).bindData();
         series.g.style.cursor = 'pointer';
         svg.appendChild(series.g);
