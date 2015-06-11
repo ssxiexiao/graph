@@ -42,14 +42,15 @@ var Series = {
         var series = {};
         series.y = 1;
         series.g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        var _data;
+        var _data = [];
+        var _fullData = [];
         var _scale;
         series.setScale = function(scale){
             _scale = scale;
             return series;
         }
         series.data = function(data){
-            _data = data;
+            _fullData = data;
             return series;
         }
         series.setAttribute = function(name, value){
@@ -65,12 +66,31 @@ var Series = {
             var color = getColor();
             for(var i = 0; i < _data.length; i++){
                 var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                var time = _fullData[_data[i]].value;
                 circle.setAttribute('fill', color);
-                circle.setAttribute('cx', _scale.scale(_data[i].value));
+                circle.setAttribute('cx', _scale.scale(time));
                 circle.setAttribute('cy', series.y);
                 circle.setAttribute('r', r);
-                onClick(Series, circle);
+                onClick(Series, circle, time);
                 series.g.appendChild(circle);
+            }
+            return series;
+        }
+        series.filter = function(func, value){
+            _data = [];
+            var count;
+            for(var i = 0; i < _fullData.length; i++){
+                count = 0;
+                var date = new Date(_fullData[i].value);
+                for(var j = 0; j < func.length; j++){
+                    if(date[func[j]]() != value[j]){
+                        count++;
+                        break;
+                    }
+                }
+                if(!count){
+                    _data.push(i);
+                }
             }
             return series;
         }
@@ -78,13 +98,31 @@ var Series = {
         return series;
     }
 };
-function onClick(Series, circle){
+function onClick(Series, circle, time){
     circle.onclick = function(){
         Series.count++;
-        Series.count%=3;
+        Series.count%=4;
         console.log(Series.count);
+        var date = new Date(time);
+        if(Series.count == 0){
+            var func = [];
+        }
+        else if(Series.count == 1){
+            var func = ['getFullYear'];
+        }
+        else if(Series.count == 2){
+            var func = ['getFullYear','getMonth'];
+        }
+        else{
+            var func = ['getFullYear','getMonth','getDay'];
+        }
+        var value = [];
+        for(var i = 0; i < func.length; i++){
+            value.push(date[func[i]]());
+        }
         for(var i = 0; i < Series.arr.length; i++){
-            var s = Series.scalebility*Series.count;
+            var series = Series.arr[i];
+            series.filter(func, value).bindData();
         }
     }
 }
@@ -113,7 +151,7 @@ window.onload = function(){
         }
         var scale = Scale.createNew().domain(_range.min, _range.max).range(x+10, x+10+len);
         console.log(scale);
-        var series = Series.createNew().data(_data).setScale(scale).setAttribute('y', y+i*interval).bindData();
+        var series = Series.createNew().data(_data).setScale(scale).setAttribute('y', y+i*interval).filter([]).bindData();
         series.g.style.cursor = 'pointer';
         svg.appendChild(series.g);
     }
