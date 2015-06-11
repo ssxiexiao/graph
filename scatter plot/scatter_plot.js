@@ -41,6 +41,7 @@ var Cell = {
       cell.rect.setAttribute("stroke", "black");
       cell.rect.setAttribute("fill", "white");
       cell.rect.setAttribute("fill-opacity", 0);
+      cell.rect.style.cursor = 'crosshair';
       cell.points = [];
       cell.addPoint = function(range, value, color){
           var r = 3;

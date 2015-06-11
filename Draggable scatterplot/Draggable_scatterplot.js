@@ -169,7 +169,7 @@ var Coordinate = {
                     var point = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                     coordinate.g.appendChild(point);
                     coordinate.points[obj.name] = point;
-                    point.dragging = false;
+                    point.style.cursor = 'move';
                 }
                 else{
                     var point = coordinate.points[obj.name];
@@ -206,9 +206,14 @@ var Coordinate = {
 };
 var OBJ;
 var OBJname;
+var mouseX,
+    mouseY,
+    objX,
+    objY;
 function onmousemove(point, arr, paths){
     var name = point.getAttribute('name');
     point.onmousemove = function(e){
+        if(!dragging){
         var normal = 0.2, highlight = 1;
         for(var i in arr){
             arr[i].setAttribute('fill-opacity', normal);
@@ -217,10 +222,12 @@ function onmousemove(point, arr, paths){
         paths[name]._path.style.visibility = 'visible';
         nameText.innerHTML = name;
     }
+    }
 }
 function onmouseout(point, arr, paths){
     var name = point.getAttribute('name');
     point.onmouseout = function(){
+        if(!dragging){
         var normal = 1;
         //nameText.innerHTML = '';
         for(var i in arr){
@@ -229,28 +236,38 @@ function onmouseout(point, arr, paths){
         if(!dragging || OBJname != point.getAttribute('name'))
             paths[name]._path.style.visibility = 'hidden';
     }
+    }
 }
 function onMouseDown(point, arr, paths){
-    point.onmousedown = function(){
+    point.onmousedown = function(e){
         if(!dragging){
             dragging = true;
             OBJname = point.getAttribute('name');
             OBJ = paths[point.getAttribute('name')];
-            console.log(OBJ);
+            objX = parseFloat(point.getAttribute('cx'));
+            objY = parseFloat(point.getAttribute('cy'));
+            mouseX = e.clientX;
+            mouseY = e.clientY;
         }
     }
 }
 document.onmouseup = function(){
+    if(dragging)
+        OBJ._path.style.visibility = 'hidden';
     dragging = false;
+    console.log(dragging);
 }
 document.onmousemove = function(e){
     if(dragging){
-        var cur = {x:e.clientX, y:e.clientY};
+        var cur = {x:e.clientX-mouseX+objX, y:e.clientY-mouseY+objY};
         var p = OBJ.findPoint({x:cur.x, y:cur.y});
         var year = p.year;
         document.getElementsByTagName('input')[0].value = parseInt(year);
     }
 }
+document.onselectstart = function(){
+    return false;
+};
 var dragging = false;
 var axes = {x:'income', y:'lifeExpectancy', z:'population'};
 var yearText = document.createElementNS("http://www.w3.org/2000/svg", "text");
