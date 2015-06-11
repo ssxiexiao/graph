@@ -67,8 +67,10 @@ var MovePath = {
     createNew: function(obj){
         var path = {};
         path._path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path._path.strokewidth = '2px';
         path.g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         path.g.appendChild(path._path);
+        path.g.setAttribute('class', 'path');
         path.count = 0;
         var dict = {};
         for(var i in axes){
@@ -82,7 +84,7 @@ var MovePath = {
         path.points = [];
         for(var i in dict){
             var _obj = {'year':i, 'x':dict[i]['x'], 'y':dict[i]['y'], 'z':dict[i]['z']};
-            if(_obj.x!=undefined && _obj.y!=undefined){
+            if(_obj.x!=undefined && _obj.y!=undefined && _obj.z!=undefined){
                 path.points.push(_obj);
             }
         }
@@ -102,6 +104,7 @@ var MovePath = {
                 path._path.setAttribute('d', str);
                 path._path.setAttribute('stroke', 'black');
                 path._path.setAttribute('fill', 'none');
+                path._path.setAttribute('stroke-width', 2);
                 path.count++;
             }
         }
@@ -116,6 +119,7 @@ var MovePath = {
                 //console.log({dx:dx, dy:dy});
                 if(i == 0){
                     min = d;
+                    minId = i;
                 }
                 else{
                     if(min > d){
@@ -261,7 +265,7 @@ document.onmousemove = function(e){
     if(dragging){
         var cur = {x:e.clientX-mouseX+objX, y:e.clientY-mouseY+objY};
         var p = OBJ.findPoint({x:cur.x, y:cur.y});
-        var year = p.year;
+        var year = p.year; 
         document.getElementsByTagName('input')[0].value = parseInt(year);
     }
 }
