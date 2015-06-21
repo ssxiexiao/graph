@@ -84,8 +84,8 @@ function setOnMouseDown(cell){
         }
         dragging = true;
         obj = cell;
-        mouseX = parseFloat(e.clientX);
-        mouseY = parseFloat(e.clientY);
+        mouseX = parseFloat(e.pageX);
+        mouseY = parseFloat(e.pageY);
         rect.style.visibility = "visible";
         rect.setAttribute("x", mouseX);
         rect.setAttribute("y", mouseY);
@@ -153,18 +153,18 @@ window.onload = function(){
                 objY = parseFloat(obj.rect.getAttribute('y')),
                 objW = parseFloat(obj.rect.getAttribute('width')),
                 objH = parseFloat(obj.rect.getAttribute('height'));
-            _h = e.clientY - mouseY;
-            _w = e.clientX - mouseX;
-            if(_w < 0 && e.clientX < objX){
+            _h = e.pageY - mouseY;
+            _w = e.pageX - mouseX;
+            if(_w < 0 && e.pageX < objX){
                 _w = objX - mouseX;
             }
-            else if(_w > 0 && e.clientX > objX+objW){
+            else if(_w > 0 && e.pageX > objX+objW){
                 _w = objX+objW-mouseX;
             }
-            if(_h < 0 && e.clientY < objY){
+            if(_h < 0 && e.pageY < objY){
                 _h = objY - mouseY;
             }
-            else if(_h > 0 && e.clientY > objY+objH){
+            else if(_h > 0 && e.pageY > objY+objH){
                 _h = objY+objH-mouseY;
             }
             if(_w < 0){

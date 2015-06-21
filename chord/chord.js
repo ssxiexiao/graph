@@ -110,7 +110,7 @@ d3.csv("debt.csv", function(csv){
     var h = 800;
     var r1 = 300;
     var r2 = 350;
-    var flag = false;
+    var flag = true;
     var center = {x:w/2, y:h/2};
     if(flag) {
         var creditor = getCreditor();

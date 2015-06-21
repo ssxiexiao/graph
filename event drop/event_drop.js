@@ -26,11 +26,11 @@ var Scale = {
             scale.xMin = min;
             scale.xMax = max;
             return scale;
-        }
+        };
         scale.scale = function(value){
             var p = (value-scale.xMin)/(scale.xMax - scale.xMin);
             return (p*(scale.yMax-scale.yMin)) + scale.yMin;
-        }
+        };
         return scale;
     }
 };
@@ -56,6 +56,17 @@ var Series = {
         }
         series.data = function(data){
             _fullData = data;
+            var r = 5;
+            while(series.g.childNodes.length){
+                series.g.removeChild(series.g.childNodes[0]);
+            }
+            var color = getColor();
+            for(var i = 0; i < _fullData.length; i++){
+                var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute('fill', series.color);
+                circle.setAttribute('r', r);
+                series.g.appendChild(circle);
+            }
             return series;
         }
         series.setAttribute = function(name, value){
@@ -63,24 +74,60 @@ var Series = {
                 series[name] = value;
             return series;
         }
-        series.bindData = function(){
-            var r = 5;
-            while(series.g.childNodes.length){
-                series.g.removeChild(series.g.childNodes[0]);
+        series.bindData = function(mode){
+            if(mode){
+                var startPosition = [], endPosition = [];
+                for(var i = 0; i < _fullData.length; i++){
+                    var circle = series.g.getElementsByTagName('circle')[i];
+                    var x = parseFloat(circle.getAttribute('cx')),
+                        y = parseFloat(circle.getAttribute('cy'));
+                    var time = _fullData[i].value;
+                    startPosition.push({x:x, y:y});
+                    if(time < _scale.xMin){
+                        endPosition.push({x:_scale.yMin, y:y})
+                    }
+                    else if(time > _scale.xMax){
+                        endPosition.push({x:_scale.yMax, y:y});
+                    }
+                    else{
+                        endPosition.push({x:_scale.scale(time), y:y});
+                    }
+                }
+                series.animate(series.g.getElementsByTagName('circle'), startPosition, endPosition);
             }
-            var color = getColor();
+            for(var i = 0; i < _fullData.length; i++){
+                var circle = series.g.getElementsByTagName('circle')[i];
+                circle.style.visibility = 'hidden';
+            }
             for(var i = 0; i < _data.length; i++){
-                var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                var circle = series.g.getElementsByTagName('circle')[_data[i]];
+                circle.style.visibility = 'visible';
                 var time = _fullData[_data[i]].value;
-                circle.setAttribute('fill', series.color);
-                circle.setAttribute('cx', _scale.scale(time));
                 circle.setAttribute('cy', series.y);
-                circle.setAttribute('r', r);
+                circle.setAttribute('cx', _scale.scale(time));
                 onClick(Series, circle, time);
-                series.g.appendChild(circle);
             }
             return series;
         }
+        series.animate = function(objArr, startPosition, endPosition){
+            var period = 500;
+            var interval = 10;
+            console.log(objArr);
+            for(var i = 0; i <= period; i+= interval){
+                for(var j = 0; j < objArr.length; j++){
+                    var obj = objArr[j];
+                    var x = (endPosition[j].x-startPosition[j].x)*(i/period) + startPosition[j].x,
+                        y = (endPosition[j].y-startPosition[j].y)*(i/period) + startPosition[j].y;
+                    _setTimeOut(i, obj, x, y);
+                }
+            }
+            function _setTimeOut(i, obj, x, y){
+                setTimeout(function(){
+                    obj.setAttribute('cx', x);
+                    obj.setAttribute('cy', y);
+                }, i);
+            }
+        };
         series.filter = function(func, value){
             _data = [];
             var count;
@@ -107,6 +154,7 @@ var Series = {
                 }
                 return max;
             }
+            return null;
         };
         series.getMin = function(){
             if(_data.length){
@@ -116,6 +164,7 @@ var Series = {
                 }
                 return min;
             }
+            return null;
         };
         Series.arr.push(series);
         return series;
@@ -156,7 +205,7 @@ function onClick(Series, circle, time){
         }
         for(var i = 0; i < Series.arr.length; i++){
             var series = Series.arr[i];
-            series.resetScaleDomain(min, max).bindData();
+            series.resetScaleDomain(min, max).bindData(1);
         }
     }
 }
