@@ -182,7 +182,6 @@ Circle.prototype.surroundLayout = function() {
 	} else {
 		var xMin, xMax, yMin, yMax;
 		for (var i = 0; i < this.children.length; i++) {
-			console.log(this.children[i].y);
 			if (i == 0) {
 				xMin = this.children[i].x - this.children[i].r;
 				xMax = this.children[i].x + this.children[i].r;
@@ -195,10 +194,17 @@ Circle.prototype.surroundLayout = function() {
 				yMax = Math.max(yMax, this.children[i].y + this.children[i].r);
 			}
 		}
-		var d = Math.sqrt(Math.pow(xMax - xMin, 2) + Math.pow(yMax - yMin, 2));
-		var r = d / 2;
 		this.x = (xMin + xMax) / 2;
 		this.y = (yMin + yMax) / 2;
+		var r;
+		for (var i = 0; i < this.children.length; i++) {
+			var d = Math.sqrt(Math.pow(this.children[i].x - this.x, 2) + Math.pow(this.children[i].y - this.y, 2)) + this.children[i].r;
+			if (i == 0) {
+				r = d;
+			} else {
+				r = Math.max(r, d);
+			}
+		}
 		this.r = r;
 		return;
 	}
@@ -214,13 +220,24 @@ Circle.prototype.layout = function(scale) {
 		this.surroundLayout();
 	}
 };
+Circle.prototype.setColor = function(count) {
+	for (var i = 0; i < this.children.length; i++) {
+		this.children[i].setColor(count + 1);
+	}
+	if (this.children.length == 0) {
+		this.color = "white";
+	} else {
+		this.color = BACKGROUND[count];
+	}
+	return;
+}
 Circle.prototype.draw = function(svg) {
 	var circle = this.svg;
 	circle.setAttribute('cx', this.x);
 	circle.setAttribute('cy', this.y);
 	circle.setAttribute('r', this.r);
 	circle.setAttribute('fill', this.color);
-	circle.setAttribute('stroke', 'black');
+	//circle.setAttribute('stroke', 'black');
 	svg.appendChild(circle);
 	for (var i = 0; i < this.children.length; i++) {
 		this.children[i].draw(svg);
@@ -230,23 +247,25 @@ Circle.prototype.draw = function(svg) {
 function main() {
 	var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 	document.getElementsByTagName("body")[0].appendChild(svg);
-	var w = 1200,
-		h = 1200;
+	var w = 960,
+		h = 960;
 	svg.style.width = w;
 	svg.style.height = h;
-	var BACKGROUND = "rgb(117, 220, 205)";
 	d3.json("flare.json", function(json) {
 		console.log(json);
 		circle = new Circle();
-		circle.initialWithJson(json);
+		circle.color =
+			circle.initialWithJson(json);
 		var range = circle.getRange();
 		console.log(range);
 		var scale = Scale.createNew();
-		scale.domain(range.min, range.max).range(5, 20);
+		scale.domain(range.min, range.max).range(5, 40);
 		circle.layout(scale);
 		circle.transition((w / 2) - circle.x, (h / 2) - circle.y);
+		circle.setColor(0);
 		console.log(circle);
 		circle.draw(svg);
 	});
 }
+var BACKGROUND = ["rgb(117, 220, 205)", "rgb(77, 194, 202)", "rgb(51, 167, 194)", "rgb(48, 140, 180)"];
 window.onload = main;
