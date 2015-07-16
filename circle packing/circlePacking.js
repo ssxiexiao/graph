@@ -205,7 +205,7 @@ Circle.prototype.surroundLayout = function() {
 				r = Math.max(r, d);
 			}
 		}
-		this.r = r;
+		this.r = r+1;
 		return;
 	}
 };
