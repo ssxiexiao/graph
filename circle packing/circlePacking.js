@@ -1,8 +1,3 @@
-function Bubble(color, r) {
-	this.color = color;
-	this.r = r;
-}
-
 function getColor() {
 	var r = Math.floor(Math.random() * 255) + 1;
 	var g = Math.floor(Math.random() * 255) + 1;
@@ -49,8 +44,88 @@ function getPosition(circle1, circle2) {
 		y: y1
 	};
 }
+var Scale = {
+	createNew: function() {
+		var scale = {};
+		scale.range = function(min, max) {
+			scale.yMin = min;
+			scale.yMax = max;
+			return scale;
+		};
+		scale.domain = function(min, max) {
+			scale.xMin = min;
+			scale.xMax = max;
+			return scale;
+		};
+		scale.scale = function(value) {
+			var p = (value - scale.xMin) / (scale.xMax - scale.xMin);
+			return (p * (scale.yMax - scale.yMin)) + scale.yMin;
+		};
+		return scale;
+	}
+};
 
-function layout(data) {
+function Circle() {
+	this.r = 0;
+	this.x = 0;
+	this.y = 0;
+	this.children = [];
+	this.color = "white";
+	this.size = 0;
+	this.name = "";
+	this.svg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+}
+Circle.prototype.getRange = function() {
+	if (this.children.length == 0) {
+		return {
+			max: this.size,
+			min: this.size
+		};
+	} else {
+		for (var i = 0; i < this.children.length; i++) {
+			var range = this.children[i].getRange();
+			if (i == 0) {
+				var min = range.min,
+					max = range.max;
+			} else {
+				min = Math.min(min, range.min);
+				max = Math.max(max, range.max);
+			}
+		}
+		return {
+			max: max,
+			min: min
+		};
+	}
+};
+Circle.prototype.initialWithJson = function(json) {
+	if (!json.children) {
+		this.name = json.name;
+		this.size = json.size;
+		return;
+	} else {
+		for (var i = 0; i < json.children.length; i++) {
+			var circle = new Circle();
+			circle.initialWithJson(json.children[i]);
+			this.children.push(circle);
+		}
+		this.name = json.name;
+		this.size = json.size;
+		return;
+	}
+};
+Circle.prototype.transition = function(dx, dy) {
+	this.x += dx;
+	this.y += dy;
+	for (var i = 0; i < this.children.length; i++) {
+		this.children[i].transition(dx, dy);
+	}
+	return;
+};
+Circle.prototype.circleLayout = function() {
+	var data = this.children;
+	if (data.length == 0)
+		return;
 	data.sort(function(a, b) {
 		return a.r - b.r;
 	});
@@ -62,14 +137,12 @@ function layout(data) {
 	var count = 0;
 	for (var i = 0; i < data.length; i++) {
 		if (i == 0) {
-			data[i].x = center.x;
-			data[i].y = center.y;
+			data[i].transition(center.x - data[i].x, center.y - data[i].y);
 			queue.push(data[i]);
 		} else {
 			while (1) {
 				if (i == 1) {
-					data[i].x = queue[count].x + data[i].r + queue[count].r;
-					data[i].y = queue[count].y;
+					data[i].transition(queue[count].x + data[i].r + queue[count].r - data[i].x, queue[count].y - data[i].y);
 					queue.push(data[i]);
 					break;
 				}
@@ -91,8 +164,7 @@ function layout(data) {
 					count++;
 					continue;
 				}
-				data[i].x = p.x;
-				data[i].y = p.y;
+				data[i].transition(p.x - data[i].x, p.y - data[i].y);
 				if (isOverlap(data[i], queue)) {
 					count++;
 				} else {
@@ -102,43 +174,79 @@ function layout(data) {
 			}
 		}
 	}
-}
-
-function transition(position, data) {
-	if (!data || !data.length || data.length == 0)
-		return false;
-	var dx = position.x - data[0].x,
-		dy = position.y - data[0].y;
-	for (var i = 0; i < data.length; i++) {
-		data[i].x += dx;
-		data[i].y += dy;
+	return;
+};
+Circle.prototype.surroundLayout = function() {
+	if (this.children.length == 0) {
+		return;
+	} else {
+		var xMin, xMax, yMin, yMax;
+		for (var i = 0; i < this.children.length; i++) {
+			console.log(this.children[i].y);
+			if (i == 0) {
+				xMin = this.children[i].x - this.children[i].r;
+				xMax = this.children[i].x + this.children[i].r;
+				yMin = this.children[i].y - this.children[i].r;
+				yMax = this.children[i].y + this.children[i].r;
+			} else {
+				xMin = Math.min(xMin, this.children[i].x - this.children[i].r);
+				xMax = Math.max(xMax, this.children[i].x + this.children[i].r);
+				yMin = Math.min(yMin, this.children[i].y - this.children[i].r);
+				yMax = Math.max(yMax, this.children[i].y + this.children[i].r);
+			}
+		}
+		var d = Math.sqrt(Math.pow(xMax - xMin, 2) + Math.pow(yMax - yMin, 2));
+		var r = d / 2;
+		this.x = (xMin + xMax) / 2;
+		this.y = (yMin + yMax) / 2;
+		this.r = r;
+		return;
 	}
-	return true;
-}
+};
+Circle.prototype.layout = function(scale) {
+	if (this.children.length == 0) {
+		this.r = scale.scale(this.size);
+	} else {
+		for (var i = 0; i < this.children.length; i++) {
+			this.children[i].layout(scale);
+		}
+		this.circleLayout();
+		this.surroundLayout();
+	}
+};
+Circle.prototype.draw = function(svg) {
+	var circle = this.svg;
+	circle.setAttribute('cx', this.x);
+	circle.setAttribute('cy', this.y);
+	circle.setAttribute('r', this.r);
+	circle.setAttribute('fill', this.color);
+	circle.setAttribute('stroke', 'black');
+	svg.appendChild(circle);
+	for (var i = 0; i < this.children.length; i++) {
+		this.children[i].draw(svg);
+	}
+};
 
 function main() {
 	var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 	document.getElementsByTagName("body")[0].appendChild(svg);
-	var w = 960,
-		h = 960;
+	var w = 1200,
+		h = 1200;
 	svg.style.width = w;
 	svg.style.height = h;
-	var data = [];
-	for (var i = 0; i < 6; i++) {
-		data.push(new Bubble(getColor(), Math.floor(Math.random() * 35) + 5));
-	}
-	layout(data);
-	transition({
-		x: w / 3,
-		y: h / 2
-	}, data);
-	for (var i = 0; i < data.length; i++) {
-		var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-		circle.setAttribute('cx', data[i].x);
-		circle.setAttribute('cy', data[i].y);
-		circle.setAttribute('r', data[i].r);
-		circle.setAttribute('fill', data[i].color);
-		svg.appendChild(circle);
-	}
+	var BACKGROUND = "rgb(117, 220, 205)";
+	d3.json("flare.json", function(json) {
+		console.log(json);
+		circle = new Circle();
+		circle.initialWithJson(json);
+		var range = circle.getRange();
+		console.log(range);
+		var scale = Scale.createNew();
+		scale.domain(range.min, range.max).range(5, 20);
+		circle.layout(scale);
+		circle.transition((w / 2) - circle.x, (h / 2) - circle.y);
+		console.log(circle);
+		circle.draw(svg);
+	});
 }
 window.onload = main;
