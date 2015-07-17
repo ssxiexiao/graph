@@ -114,6 +114,17 @@ Circle.prototype.initialWithJson = function(json) {
 		return;
 	}
 };
+Circle.prototype.scale = function(x, y, times) {
+	var dx = this.x - x,
+		dy = this.y - y;
+	this.x = x + dx * times;
+	this.y = y + dy * times;
+	this.r *= times;
+	for (var i = 0; i < this.children.length; i++) {
+		this.children[i].scale(x, y, times);
+	}
+	return;
+};
 Circle.prototype.transition = function(dx, dy) {
 	this.x += dx;
 	this.y += dy;
@@ -121,6 +132,11 @@ Circle.prototype.transition = function(dx, dy) {
 		this.children[i].transition(dx, dy);
 	}
 	return;
+};
+Circle.prototype.locate = function(x, y) {
+	var dx = x - this.x,
+		dy = y - this.y;
+	this.transition(dx, dy);
 };
 Circle.prototype.circleLayout = function() {
 	var data = this.children;
@@ -205,7 +221,7 @@ Circle.prototype.surroundLayout = function() {
 				r = Math.max(r, d);
 			}
 		}
-		this.r = r+1;
+		this.r = r + 1;
 		return;
 	}
 };
@@ -231,20 +247,79 @@ Circle.prototype.setColor = function(count) {
 	}
 	return;
 }
-Circle.prototype.draw = function(svg) {
-	var circle = this.svg;
-	circle.setAttribute('cx', this.x);
-	circle.setAttribute('cy', this.y);
-	circle.setAttribute('r', this.r);
-	circle.setAttribute('fill', this.color);
-	//circle.setAttribute('stroke', 'black');
-	svg.appendChild(circle);
-	for (var i = 0; i < this.children.length; i++) {
-		this.children[i].draw(svg);
+Circle.prototype.draw = function(first, svg) {
+	if (first == 1) {
+		var circle = this.svg;
+		circle.setAttribute('cx', this.x);
+		circle.setAttribute('cy', this.y);
+		circle.setAttribute('r', this.r);
+		circle.setAttribute('fill', this.color);
+		//circle.setAttribute('stroke', 'black');
+		svg.appendChild(circle);
+		for (var i = 0; i < this.children.length; i++) {
+			this.children[i].draw(1, svg);
+		}
+	} else {
+		var circle = this.svg;
+		circle.setAttribute('cx', this.x);
+		circle.setAttribute('cy', this.y);
+		circle.setAttribute('r', this.r);
+		circle.setAttribute('fill', this.color);
+		//circle.setAttribute('stroke', 'black');
+		for (var i = 0; i < this.children.length; i++) {
+			this.children[i].draw(0);
+		}
 	}
 };
-
-function main() {
+var setOnClickListener = function(circle, rootCircle) {
+	// if(circle.children.length == 0)
+	// 	return;
+	circle.svg.onclick = onClickListener(circle, rootCircle);
+	for (var i = 0; i < circle.children.length; i++) {
+		setOnClickListener(circle.children[i], rootCircle);
+	}
+};
+var onClickListener = function(circle, rootCircle) {
+	return function() {
+		if (circle == preCircle) {
+			var svg = document.getElementsByTagName('svg')[0];
+			var x = svg.style.width,
+				y = svg.style.height,
+				dx = parseInt(x) / 2 - rootCircle.x,
+				dy = parseInt(y) / 2 - rootCircle.y,
+				dr = parseFloat(svg.style.width) / 2 - rootCircle.r,
+				r = rootCircle.r;
+		} else {
+			var svg = document.getElementsByTagName('svg')[0];
+			var x = svg.style.width,
+				y = svg.style.height,
+				dx = parseInt(x) / 2 - circle.x,
+				dy = parseInt(y) / 2 - circle.y,
+				dr = parseFloat(svg.style.width) / 2 - circle.r,
+				r = circle.r;
+		}
+		var rootX = rootCircle.x,
+			rootY = rootCircle.y;
+		var TIME = 500;
+		var count = 30;
+		var animation = function(i) {
+			var n = i / count;
+			var m = 1 / count;
+			var k = Math.pow((r + dr) / r, 1 / count);
+			setTimeout(function() {
+				rootCircle.scale(rootX + (n - m) * dx, rootY + (n - m) * dy, k);
+				rootCircle.locate(rootX + (n * dx), rootY + (n * dy));
+				rootCircle.draw(0);
+			}, n * TIME);
+		};
+		for (var i = 1; i <= count; i++) {
+			animation(i);
+		}
+		preCircle = circle;
+	}
+};
+var preCircle = null;
+var main = function() {
 	var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 	document.getElementsByTagName("body")[0].appendChild(svg);
 	var w = 960,
@@ -264,7 +339,8 @@ function main() {
 		circle.transition((w / 2) - circle.x, (h / 2) - circle.y);
 		circle.setColor(0);
 		console.log(circle);
-		circle.draw(svg);
+		circle.draw(1, svg);
+		setOnClickListener(circle, circle);
 	});
 }
 var BACKGROUND = ["rgb(117, 220, 205)", "rgb(77, 194, 202)", "rgb(51, 167, 194)", "rgb(48, 140, 180)"];
